@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getPatients } from "@/lib/api";
+import { QuickAddPatientModal } from "./QuickAddPatientModal";
+import { PlusCircle } from "lucide-react";
 
 interface PatientItem {
   id: string;
@@ -23,12 +25,19 @@ export default function PatientsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchData = async (query?: string) => {
     try {
       setLoading(true);
       setError(null);
-      const resp = await getPatients(query ? { name: query, uhid: query, page: 1, limit: 20 } : { page: 1, limit: 20 });
+      const params = {
+        page: 1,
+        limit: 20,
+        scope: 'my', // Doctors can only see their own patients
+        ...(query && { name: query, uhid: query }),
+      };
+      const resp = await getPatients(params);
       const data = resp.data?.data?.results || [];
       setItems(data);
     } catch (err: any) {
@@ -43,16 +52,34 @@ export default function PatientsList() {
     fetchData();
   }, []);
 
+  const handlePatientAdded = () => {
+    // Refresh the patient list after successful addition
+    fetchData(q);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Patients</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 mb-4">
-          <Input placeholder="Search by name or UHID" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button className="px-3 py-2 bg-gray-200 rounded" onClick={() => fetchData(q)}>Search</button>
-        </div>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle>Patients</CardTitle>
+          <Button onClick={() => setShowAddModal(true)} size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Patient
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {/* Search Bar */}
+          <div className="flex items-center gap-2 mb-4">
+            <Input
+              placeholder="Search your patients by name or UHID"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchData(q)}
+            />
+            <Button variant="secondary" onClick={() => fetchData(q)}>
+              Search
+            </Button>
+          </div>
         {loading ? (
           <div className="text-sm text-gray-600">Loading...</div>
         ) : error ? (
@@ -94,5 +121,12 @@ export default function PatientsList() {
         )}
       </CardContent>
     </Card>
+
+    <QuickAddPatientModal
+      open={showAddModal}
+      onOpenChange={setShowAddModal}
+      onSuccess={handlePatientAdded}
+    />
+    </>
   );
 }

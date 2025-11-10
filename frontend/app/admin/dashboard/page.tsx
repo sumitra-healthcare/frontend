@@ -5,6 +5,9 @@ import {
   getDoctors,
   verifyDoctorAccount,
   suspendDoctorAccount,
+  getCoordinators,
+  verifyCoordinatorAccount,
+  suspendCoordinatorAccount,
   logoutAdmin,
   getAdminDashboardStats
 } from "@/lib/api";
@@ -27,23 +30,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Users, UserCheck, Shield, LogOut } from "lucide-react";
+import { MoreHorizontal, Users, UserCheck, Shield, LogOut, UserCog } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { AxiosError } from "axios";
-import { BackendErrorResponse, Doctor, Admin } from "@/lib/types";
+import { BackendErrorResponse, Doctor, Admin, Coordinator } from "@/lib/types";
 
 interface DashboardStats {
   doctors: number;
   admins: number;
+  coordinators: number;
 }
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [coordinators, setCoordinators] = useState<Coordinator[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [currentTab, setCurrentTab] = useState<string>("all");
+  const [currentCoordinatorTab, setCurrentCoordinatorTab] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -69,6 +75,12 @@ export default function AdminDashboardPage() {
       fetchDoctors(currentTab);
     }
   }, [currentTab, admin]);
+
+  useEffect(() => {
+    if (admin?.permissions.canManageDoctors) {
+      fetchCoordinators(currentCoordinatorTab);
+    }
+  }, [currentCoordinatorTab, admin]);
 
   const loadDashboardData = async () => {
     try {
@@ -108,7 +120,7 @@ export default function AdminDashboardPage() {
     if (!admin?.permissions.canManageDoctors) {
       return;
     }
-    
+
     try {
       const response = await getDoctors({ status: statusFilter === "all" ? undefined : statusFilter });
       setDoctors(response.data.data.doctors);
@@ -118,6 +130,25 @@ export default function AdminDashboardPage() {
         errorMessage = error.response?.data?.message || errorMessage;
       }
       toast.error("Failed to fetch doctors", {
+        description: errorMessage,
+      });
+    }
+  };
+
+  const fetchCoordinators = async (statusFilter: string) => {
+    if (!admin?.permissions.canManageDoctors) {
+      return;
+    }
+
+    try {
+      const response = await getCoordinators({ status: statusFilter === "all" ? undefined : statusFilter });
+      setCoordinators(response.data.data.coordinators);
+    } catch (error: unknown) {
+      let errorMessage = "An unexpected error occurred.";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+      toast.error("Failed to fetch coordinators", {
         description: errorMessage,
       });
     }
@@ -151,6 +182,41 @@ export default function AdminDashboardPage() {
         errorMessage = error.response?.data?.message || errorMessage;
       }
       toast.error(`Failed to ${action} doctor`, {
+        description: errorMessage,
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCoordinatorAction = async (id: string, action: "verify" | "suspend") => {
+    if (!admin?.permissions.canManageDoctors) {
+      toast.error("You don't have permission to manage coordinators");
+      return;
+    }
+
+    try {
+      setActionLoading(id);
+      if (action === "verify") {
+        await verifyCoordinatorAccount(id);
+      } else {
+        await suspendCoordinatorAccount(id);
+      }
+      fetchCoordinators(currentCoordinatorTab); // Refresh table
+      toast.success(
+        `${action === "verify" ? "Coordinator Verified" : "Coordinator Suspended"}`,
+        {
+          description: `Coordinator has been successfully ${
+            action === "verify" ? "verified" : "suspended"
+          }.`,
+        }
+      );
+    } catch (error: unknown) {
+      let errorMessage = "An unexpected error occurred.";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+      toast.error(`Failed to ${action} coordinator`, {
         description: errorMessage,
       });
     } finally {
@@ -224,7 +290,7 @@ export default function AdminDashboardPage() {
 
       {/* Stats Cards */}
       {admin?.permissions.canViewAnalytics && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Doctors</CardTitle>
@@ -237,7 +303,20 @@ export default function AdminDashboardPage() {
               </p>
             </CardContent>
           </Card>
-          
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Coordinators</CardTitle>
+              <UserCog className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.coordinators}</div>
+              <p className="text-xs text-muted-foreground">
+                Hospital coordinators
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Admins</CardTitle>
@@ -333,6 +412,97 @@ export default function AdminDashboardPage() {
                                   <DropdownMenuItem
                                     onClick={() => handleAction(doctor.id || doctor._id, "suspend")}
                                     disabled={actionLoading === (doctor.id || doctor._id)}
+                                    className="text-red-600"
+                                  >
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    Suspend Account
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Coordinators Management */}
+      {admin?.permissions.canManageDoctors && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Coordinator Management</CardTitle>
+            <p className="text-sm text-gray-600">
+              Manage coordinator accounts and verification status
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="all" onValueChange={setCurrentCoordinatorTab}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="pending_verification">Pending</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="suspended">Suspended</TabsTrigger>
+              </TabsList>
+              <TabsContent value={currentCoordinatorTab}>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {coordinators.map((coordinator) => (
+                        <TableRow key={coordinator.id}>
+                          <TableCell className="font-medium">
+                            {coordinator.full_name || coordinator.fullName}
+                          </TableCell>
+                          <TableCell>{coordinator.email}</TableCell>
+                          <TableCell>{coordinator.phone_number || coordinator.phoneNumber || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(coordinator.account_status || coordinator.accountStatus)}>
+                              {formatAccountStatus(coordinator.account_status || coordinator.accountStatus)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(coordinator.created_at || coordinator.createdAt || '').toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  disabled={actionLoading === coordinator.id}
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {(coordinator.account_status || coordinator.accountStatus) === "pending_verification" && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleCoordinatorAction(coordinator.id, "verify")}
+                                    disabled={actionLoading === coordinator.id}
+                                  >
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Verify Account
+                                  </DropdownMenuItem>
+                                )}
+                                {(coordinator.account_status || coordinator.accountStatus) === "active" && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleCoordinatorAction(coordinator.id, "suspend")}
+                                    disabled={actionLoading === coordinator.id}
                                     className="text-red-600"
                                   >
                                     <Shield className="mr-2 h-4 w-4" />

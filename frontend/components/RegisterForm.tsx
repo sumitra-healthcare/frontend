@@ -3,11 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Eye, EyeOff, Stethoscope, Mail, Lock, User, IdCard, Briefcase, Loader2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Stethoscope, Mail, Lock, User, IdCard, Briefcase, Loader2, AlertCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getActiveHospitals, Hospital } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Registration schema
 const DoctorRegistrationSchema = z.object({
@@ -27,6 +35,7 @@ const DoctorRegistrationSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   medicalRegistrationId: z.string().min(5, "Medical Registration ID must be at least 5 characters").max(50),
   specialty: z.string().min(2, "Specialty must be at least 2 characters").max(100),
+  hospitalId: z.string().min(1, "Please select a hospital"),
   password: z
     .string()
     .min(6, "Password must be at least 6 characters")
@@ -43,6 +52,29 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loadingHospitals, setLoadingHospitals] = useState(true);
+
+  // Fetch hospitals on mount
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      try {
+        const response = await getActiveHospitals();
+        if (response.data.success) {
+          setHospitals(response.data.data.hospitals);
+        }
+      } catch (error) {
+        console.error('Failed to fetch hospitals:', error);
+        toast.error('Failed to load hospitals', {
+          description: 'Please refresh the page to try again.',
+        });
+      } finally {
+        setLoadingHospitals(false);
+      }
+    };
+
+    fetchHospitals();
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -58,6 +90,7 @@ export function RegisterForm() {
       email: "",
       medicalRegistrationId: "",
       specialty: "",
+      hospitalId: "",
       password: "",
       confirmPassword: "",
     },
@@ -197,6 +230,45 @@ export function RegisterForm() {
                         {...field}
                         className="pl-10 h-11 rounded-md"
                       />
+                    </FormControl>
+                  </div>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            {/* Hospital */}
+            <FormField
+              control={form.control}
+              name="hospitalId"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="text-sm font-medium">Hospital</FormLabel>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <FormControl>
+                      <Select
+                        disabled={loadingHospitals || authLoading}
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger className="pl-10 h-11 rounded-md">
+                          <SelectValue placeholder={loadingHospitals ? "Loading hospitals..." : "Select your hospital"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hospitals.map((hospital) => (
+                            <SelectItem key={hospital.id} value={hospital.id}>
+                              {hospital.name}
+                              {hospital.city && hospital.state ? ` (${hospital.city}, ${hospital.state})` : ''}
+                            </SelectItem>
+                          ))}
+                          {hospitals.length === 0 && !loadingHospitals && (
+                            <SelectItem value="no-hospitals" disabled>
+                              No hospitals available
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                   </div>
                   <FormMessage className="text-xs" />

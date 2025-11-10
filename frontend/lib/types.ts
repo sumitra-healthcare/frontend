@@ -35,6 +35,25 @@ export interface Doctor {
   updated_at?: string;
 }
 
+export interface Coordinator {
+  id: string;
+  fullName?: string;
+  full_name?: string;
+  email: string;
+  phoneNumber?: string;
+  phone_number?: string;
+  hospitalId?: string;
+  hospital_id?: string;
+  accountStatus?: "pending_verification" | "active" | "suspended";
+  account_status?: "pending_verification" | "active" | "suspended";
+  verificationDate?: string;
+  verification_date?: string;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
+
 export interface Admin {
   _id: string;
   fullName: string;
