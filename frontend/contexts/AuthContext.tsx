@@ -46,6 +46,7 @@ interface RegisterData {
   medicalRegistrationId: string;
   specialty: string;
   password: string;
+  hospitalId: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
