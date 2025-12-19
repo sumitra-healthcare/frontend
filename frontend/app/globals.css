@@ -828,4 +828,343 @@
   .border-lavender {
     border-color: var(--color-lavender);
   }
+
+  /* ========================================
+     PATIENT PORTAL DESIGN SYSTEM
+     Based on Figma design specifications
+     ======================================== */
+
+  /* Patient Portal Color Variables */
+  :root {
+    --patient-primary: #9810fa;
+    --patient-primary-light: #a855f7;
+    --patient-primary-dark: #7c3aed;
+    --patient-secondary: #155dfc;
+    --patient-success: #008236;
+    --patient-warning: #f59e0b;
+    --patient-danger: #82181a;
+    --patient-bg-start: #faf5ff;
+    --patient-bg-end: #f3e8ff;
+    --patient-card-border: #f3e8ff;
+    --patient-text-primary: #101828;
+    --patient-text-secondary: #475467;
+    --patient-text-muted: #667085;
+  }
+
+  /* Patient Portal Gradient Background */
+  .patient-bg-gradient {
+    background: linear-gradient(135.886deg, var(--patient-bg-start) 0%, var(--patient-bg-end) 100%);
+  }
+
+  .patient-bg-gradient-dark {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  }
+
+  /* Patient Portal Cards */
+  .patient-card {
+    background: white;
+    border: 0.87px solid var(--patient-card-border);
+    border-radius: 16px;
+    box-shadow: 0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -4px rgba(0, 0, 0, 0.1);
+  }
+
+  .patient-card-elevated {
+    background: white;
+    border: 1px solid var(--patient-card-border);
+    border-radius: 20px;
+    box-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Patient Portal Primary Button */
+  .patient-btn-primary {
+    background: var(--patient-primary);
+    color: white;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    padding: 10px 24px;
+    box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease-out;
+  }
+
+  .patient-btn-primary:hover {
+    background: var(--patient-primary-light);
+    transform: translateY(-1px);
+  }
+
+  .patient-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Patient Portal Secondary Button (Blue) */
+  .patient-btn-secondary {
+    background: var(--patient-secondary);
+    color: white;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    padding: 10px 24px;
+    transition: all 0.2s ease-out;
+  }
+
+  .patient-btn-secondary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+  }
+
+  /* Patient Portal Navigation Tab */
+  .patient-nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-secondary);
+    border-bottom: 1.74px solid transparent;
+    transition: all 0.2s ease-out;
+  }
+
+  .patient-nav-tab:hover {
+    color: var(--patient-primary);
+    background: rgba(152, 16, 250, 0.05);
+  }
+
+  .patient-nav-tab.active {
+    color: var(--patient-primary);
+    border-bottom-color: var(--patient-primary);
+    background: rgba(152, 16, 250, 0.08);
+  }
+
+  /* Patient Portal Header */
+  .patient-header {
+    background: white;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .patient-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .patient-header-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--patient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Patient Portal Typography */
+  .patient-heading-1 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 36px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-primary);
+  }
+
+  .patient-heading-2 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-primary);
+  }
+
+  .patient-heading-3 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 28px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-primary);
+  }
+
+  .patient-heading-4 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-primary);
+  }
+
+  .patient-body {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-secondary);
+  }
+
+  .patient-body-sm {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: -0.3125px;
+    color: var(--patient-text-muted);
+  }
+
+  /* Patient Portal Icon Containers */
+  .patient-icon-container {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .patient-icon-primary {
+    background: var(--patient-primary);
+    color: white;
+  }
+
+  .patient-icon-secondary {
+    background: var(--patient-secondary);
+    color: white;
+  }
+
+  .patient-icon-success {
+    background: var(--patient-success);
+    color: white;
+  }
+
+  .patient-icon-outlined {
+    background: rgba(152, 16, 250, 0.1);
+    color: var(--patient-primary);
+    border: 1px solid rgba(152, 16, 250, 0.2);
+  }
+
+  /* Patient Portal Status Badges */
+  .patient-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .patient-badge-success {
+    background: rgba(0, 130, 54, 0.1);
+    color: var(--patient-success);
+  }
+
+  .patient-badge-pending {
+    background: rgba(21, 93, 252, 0.1);
+    color: var(--patient-secondary);
+  }
+
+  .patient-badge-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--patient-warning);
+  }
+
+  .patient-badge-danger {
+    background: rgba(130, 24, 26, 0.1);
+    color: var(--patient-danger);
+  }
+
+  /* Patient Portal Gradient Text */
+  .text-gradient-patient {
+    background: linear-gradient(135deg, var(--patient-primary) 0%, var(--patient-primary-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Patient Portal Gradient Backgrounds */
+  .bg-gradient-patient {
+    background: linear-gradient(135deg, var(--patient-primary) 0%, var(--patient-primary-light) 100%);
+  }
+
+  .bg-gradient-patient-light {
+    background: linear-gradient(135.886deg, var(--patient-bg-start) 0%, var(--patient-bg-end) 100%);
+  }
+
+  /* Patient Portal Appointment Card */
+  .patient-appointment-card {
+    background: white;
+    border: 1px solid var(--patient-card-border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.2s ease-out;
+  }
+
+  .patient-appointment-card:hover {
+    border-color: rgba(152, 16, 250, 0.3);
+    box-shadow: 0px 4px 12px rgba(152, 16, 250, 0.1);
+  }
+
+  /* Patient Portal Glow Effects */
+  .glow-patient {
+    box-shadow: 0 0 20px rgba(152, 16, 250, 0.4), 0 0 40px rgba(152, 16, 250, 0.2);
+  }
+
+  .shadow-glow-patient {
+    box-shadow: 0 4px 14px rgba(152, 16, 250, 0.25);
+  }
+
+  /* Patient Portal Glass Effect */
+  .glass-patient {
+    background: rgba(152, 16, 250, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(152, 16, 250, 0.15);
+    box-shadow: 0 8px 32px rgba(152, 16, 250, 0.12);
+  }
+
+  /* Patient Portal Divider */
+  .patient-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--patient-card-border) 50%, transparent 100%);
+  }
+
+  /* Patient Portal List Item */
+  .patient-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--patient-card-border);
+  }
+
+  .patient-list-item:last-child {
+    border-bottom: none;
+  }
+
+  /* Patient Portal Health Do/Don't Items */
+  .patient-health-do {
+    color: var(--patient-success);
+  }
+
+  .patient-health-dont {
+    color: var(--patient-danger);
+  }
 }

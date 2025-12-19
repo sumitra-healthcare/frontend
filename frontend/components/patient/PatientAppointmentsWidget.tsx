@@ -56,27 +56,27 @@ export default function PatientAppointmentsWidget() {
     const statusConfig: Record<string, { icon: React.ReactNode; className: string; label: string }> = {
       scheduled: {
         icon: <Clock className="w-3 h-3" />,
-        className: 'bg-blue-100 text-blue-800 border-blue-200',
+        className: 'patient-badge patient-badge-pending',
         label: 'Scheduled'
       },
       confirmed: {
         icon: <CheckCircle className="w-3 h-3" />,
-        className: 'bg-green-100 text-green-800 border-green-200',
+        className: 'patient-badge patient-badge-success',
         label: 'Confirmed'
       },
       completed: {
         icon: <CheckCircle className="w-3 h-3" />,
-        className: 'bg-gray-100 text-gray-800 border-gray-200',
+        className: 'patient-badge bg-gray-100 text-gray-700',
         label: 'Completed'
       },
       cancelled: {
         icon: <XCircle className="w-3 h-3" />,
-        className: 'bg-red-100 text-red-800 border-red-200',
+        className: 'patient-badge patient-badge-danger',
         label: 'Cancelled'
       },
       'no-show': {
         icon: <AlertCircle className="w-3 h-3" />,
-        className: 'bg-orange-100 text-orange-800 border-orange-200',
+        className: 'patient-badge patient-badge-warning',
         label: 'No Show'
       }
     };
@@ -84,7 +84,7 @@ export default function PatientAppointmentsWidget() {
     const config = statusConfig[status.toLowerCase()] || statusConfig.scheduled;
     
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${config.className}`}>
+      <span className={config.className}>
         {config.icon}
         {config.label}
       </span>
@@ -111,42 +111,49 @@ export default function PatientAppointmentsWidget() {
     const { dateStr, timeStr } = formatDateTime(appointment.scheduledTime);
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-        <div className="flex justify-between items-start mb-3">
+      <div className="patient-appointment-card">
+        <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">{dateStr}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span>{timeStr}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="patient-icon-container patient-icon-outlined w-10 h-10">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="patient-heading-4 font-medium">{dateStr}</p>
+                <p className="text-[#008236] font-medium text-sm">{timeStr}</p>
+              </div>
             </div>
           </div>
           {getStatusBadge(appointment.status)}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-start gap-2">
-            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+        <div className="space-y-3 pt-3 border-t border-[#f3e8ff]">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#f3e8ff] flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 text-[#9810fa]" />
+            </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">{appointment.practitioner.fullName}</p>
+              <p className="patient-heading-4 font-medium">{appointment.practitioner.fullName}</p>
               {appointment.practitioner.specialty && (
-                <p className="text-xs text-gray-500">{appointment.practitioner.specialty}</p>
+                <p className="patient-body-sm">{appointment.practitioner.specialty}</p>
               )}
             </div>
           </div>
 
           {appointment.appointmentType && (
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">{appointment.appointmentType}</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#f3e8ff] flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-[#9810fa]" />
+              </div>
+              <p className="patient-body">{appointment.appointmentType}</p>
             </div>
           )}
 
           {appointment.notes && (
-            <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-              <span className="font-medium">Notes:</span> {appointment.notes}
+            <div className="mt-3 p-3 bg-[#faf5ff] rounded-lg">
+              <p className="patient-body-sm">
+                <span className="font-medium text-[#101828]">Notes:</span> {appointment.notes}
+              </p>
             </div>
           )}
         </div>
@@ -157,19 +164,25 @@ export default function PatientAppointmentsWidget() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-[#9810fa] animate-spin mx-auto mb-3" />
+          <p className="patient-body-sm">Loading appointments...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-        <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
-        <p className="text-sm text-red-800">{error}</p>
+      <div className="text-center py-12 patient-card p-6">
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+          <AlertCircle className="w-6 h-6 text-red-600" />
+        </div>
+        <p className="patient-heading-4 font-medium text-red-800 mb-2">Error Loading Appointments</p>
+        <p className="patient-body-sm text-red-600 mb-4">{error}</p>
         <button
           onClick={fetchAppointments}
-          className="mt-3 text-sm text-red-600 hover:text-red-700 font-medium"
+          className="patient-btn-primary"
         >
           Try Again
         </button>
@@ -180,22 +193,30 @@ export default function PatientAppointmentsWidget() {
   if (appointments.length === 0) {
     return (
       <div className="text-center py-12">
-        <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-600 font-medium mb-1">No Appointments Yet</p>
-        <p className="text-sm text-gray-500">Your appointments will appear here once scheduled by your doctor</p>
+        <div className="patient-icon-container patient-icon-outlined mx-auto mb-4 w-16 h-16">
+          <Calendar className="w-8 h-8" />
+        </div>
+        <p className="patient-heading-4 font-medium mb-2">No Appointments Yet</p>
+        <p className="patient-body-sm max-w-sm mx-auto">
+          Your appointments will appear here once scheduled by your doctor
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Upcoming Appointments */}
       {upcomingAppointments.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-purple-600" />
-            Upcoming Appointments ({upcomingAppointments.length})
-          </h3>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="patient-icon-container patient-icon-outlined w-8 h-8">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <h3 className="patient-heading-4 font-semibold">
+              Upcoming ({upcomingAppointments.length})
+            </h3>
+          </div>
           <div className="grid gap-4">
             {upcomingAppointments.map((appointment) => (
               <AppointmentCard key={appointment.appointmentId} appointment={appointment} />
@@ -207,17 +228,21 @@ export default function PatientAppointmentsWidget() {
       {/* Past Appointments */}
       {pastAppointments.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gray-600" />
-            Past Appointments ({pastAppointments.length})
-          </h3>
-          <div className="grid gap-4">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-gray-500" />
+            </div>
+            <h3 className="patient-heading-4 font-semibold text-gray-600">
+              Past ({pastAppointments.length})
+            </h3>
+          </div>
+          <div className="grid gap-4 opacity-75">
             {pastAppointments.slice(0, 5).map((appointment) => (
               <AppointmentCard key={appointment.appointmentId} appointment={appointment} />
             ))}
           </div>
           {pastAppointments.length > 5 && (
-            <p className="text-sm text-gray-500 text-center mt-4">
+            <p className="patient-body-sm text-center mt-4">
               Showing 5 of {pastAppointments.length} past appointments
             </p>
           )}
@@ -226,4 +251,3 @@ export default function PatientAppointmentsWidget() {
     </div>
   );
 }
-

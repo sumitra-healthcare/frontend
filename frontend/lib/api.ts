@@ -2116,6 +2116,80 @@ export const getMedicalHistory = async (): Promise<AxiosResponse<{ status: strin
 };
 
 // ============================================
+// Medications API
+// ============================================
+
+export interface MedicationItem {
+  id: string;
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  instructions: string;
+  startDate: string;
+  endDate: string | null;
+  prescriber: string;
+  prescriberSpecialty: string | null;
+  encounterId: string;
+  isActive: boolean;
+}
+
+export interface MedicationsResponse {
+  current: MedicationItem[];
+  past: MedicationItem[];
+  totalCount: number;
+}
+
+// Get medications (aggregated from encounters)
+export const getMyMedications = async (): Promise<AxiosResponse<{ status: string; data: MedicationsResponse }>> => {
+  return apiClient.get('/patients/me/medications');
+};
+
+// ============================================
+// Vitals API
+// ============================================
+
+export interface VitalReading {
+  id: string;
+  date: string;
+  hospitalName: string;
+  bloodPressure: string | null;
+  systolic: number | null;
+  diastolic: number | null;
+  heartRate: number | null;
+  temperature: number | null;
+  weight: number | null;
+  height: number | null;
+  spO2: number | null;
+  bloodGlucose: number | null;
+  respiratoryRate: number | null;
+}
+
+export interface VitalSummaryItem {
+  value: string | number;
+  date: string;
+}
+
+export interface VitalsResponse {
+  latest: VitalReading | null;
+  history: VitalReading[];
+  summary: {
+    bloodPressure: VitalSummaryItem | null;
+    heartRate: VitalSummaryItem | null;
+    temperature: VitalSummaryItem | null;
+    weight: VitalSummaryItem | null;
+    height: VitalSummaryItem | null;
+    spO2: VitalSummaryItem | null;
+    bloodGlucose: VitalSummaryItem | null;
+  };
+}
+
+// Get vitals history (from encounters)
+export const getMyVitals = async (limit: number = 20): Promise<AxiosResponse<{ status: string; data: VitalsResponse }>> => {
+  return apiClient.get('/patients/me/vitals', { params: { limit } });
+};
+
+// ============================================
 // Doctor Discovery & Booking APIs
 // ============================================
 

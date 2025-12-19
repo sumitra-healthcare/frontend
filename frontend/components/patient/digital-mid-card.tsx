@@ -1,10 +1,7 @@
 "use client";
 
-import { QrCode, Copy, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Heart, Fingerprint, Copy, Check } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 interface DigitalMIDCardProps {
   patientName: string;
@@ -16,59 +13,83 @@ interface DigitalMIDCardProps {
 export function DigitalMIDCard({ patientName, mid, dob, gender }: DigitalMIDCardProps) {
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(mid);
-    setCopied(true);
-    toast.success("MID copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(mid);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   return (
-    <Card className="bg-gradient-to-r from-purple-600 to-blue-600 text-white overflow-hidden relative shadow-lg border-0">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#9810fa] to-[#7c3aed] p-6 text-white shadow-glow-patient">
       {/* Background Pattern */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full blur-3xl -translate-x-1/2 translate-y-1/2" />
+      </div>
 
-      <CardContent className="p-6 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          
-          {/* Left Side: ID Info */}
-          <div className="space-y-4 text-center md:text-left">
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Heart className="w-5 h-5 text-white" />
+            </div>
             <div>
-              <h3 className="text-sm font-medium text-purple-100 uppercase tracking-wider">MedMitra Universal ID</h3>
-              <div className="flex items-center gap-2 justify-center md:justify-start mt-1">
-                <span className="text-3xl font-bold tracking-tight font-mono">{mid}</span>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/20"
-                  onClick={copyToClipboard}
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="font-semibold text-lg">{patientName}</p>
-              <div className="flex gap-3 text-sm text-purple-100 justify-center md:justify-start">
-                {dob && <span>DOB: {dob}</span>}
-                {gender && <span>• {gender}</span>}
-              </div>
+              <p className="text-sm font-medium text-white/80">MedMitra</p>
+              <p className="text-xs text-white/60">Digital Health ID</p>
             </div>
           </div>
-
-          {/* Right Side: QR Code */}
-          <div className="bg-white p-3 rounded-xl shadow-inner">
-            {/* Placeholder for real QR Code */}
-            <div className="h-32 w-32 bg-gray-900 flex items-center justify-center rounded-lg">
-              <QrCode className="h-20 w-20 text-white" />
-            </div>
-            <p className="text-[10px] text-center text-gray-500 mt-1 font-medium">Scan at Hospital</p>
+          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <Fingerprint className="w-5 h-5 text-white" />
           </div>
-
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Patient Name */}
+        <div className="mb-4">
+          <p className="text-sm text-white/70 mb-1">Patient Name</p>
+          <p className="text-2xl font-bold">{patientName}</p>
+        </div>
+
+        {/* MID Number */}
+        <div className="mb-4">
+          <p className="text-sm text-white/70 mb-1">Universal Health ID</p>
+          <div className="flex items-center gap-3">
+            <p className="text-xl font-mono font-bold tracking-wider">{mid}</p>
+            <button 
+              onClick={handleCopy}
+              className="p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+              title="Copy MID"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-300" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div className="flex gap-6 pt-4 border-t border-white/20">
+          {dob && (
+            <div>
+              <p className="text-xs text-white/60">Date of Birth</p>
+              <p className="text-sm font-medium">{dob}</p>
+            </div>
+          )}
+          {gender && (
+            <div>
+              <p className="text-xs text-white/60">Gender</p>
+              <p className="text-sm font-medium capitalize">{gender}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
