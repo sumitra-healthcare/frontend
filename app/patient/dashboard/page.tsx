@@ -66,6 +66,10 @@ interface DoctorCard {
   rating?: number;
   consultationFee?: number;
   availableSlots?: string[];
+  hospital?: {
+    id: string;
+    name: string;
+  };
 }
 
 export default function PatientDashboardPage() {
@@ -231,10 +235,27 @@ export default function PatientDashboardPage() {
   const handleConfirmBooking = async (data: { doctorId: string; date: string; timeSlot: string; paymentMethod: string }) => {
     setIsBookingLoading(true);
     try {
-      // For now, we'll show a success message since the full booking API may need hospital info
-      // In a real implementation, you'd call bookPatientAppointment with all required data
-      toast.success(`Appointment booked successfully with ${selectedDoctorForBooking?.fullName}!`);
-      handleCloseBookingModal();
+      // Check if hospital info is available
+      if (!selectedDoctorForBooking?.hospital?.id) {
+        toast.error('Hospital information is missing. Please try a different doctor.');
+        return;
+      }
+
+      // Format the scheduled time as ISO string
+      const scheduledTime = `${data.date}T${data.timeSlot}:00`;
+
+      const response = await bookPatientAppointment({
+        doctorId: data.doctorId,
+        hospitalId: selectedDoctorForBooking.hospital.id,
+        scheduledTime: scheduledTime,
+        appointmentType: 'Consultation',
+      });
+
+      if (response.data.status === 'success') {
+        toast.success(`Appointment booked successfully with ${selectedDoctorForBooking?.fullName}!`);
+        handleCloseBookingModal();
+        // Optionally refresh appointments
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to book appointment');
     } finally {
@@ -530,6 +551,17 @@ export default function PatientDashboardPage() {
 
         {activeTab === 'health-forecast' && (
           <div className="space-y-8">
+            {/* Sample Data Warning Banner */}
+            <div className="bg-[#fffaeb] border border-[#fec84b] rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-[#dc6803] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[14px] font-medium text-[#b54708]">Sample Health Forecast</p>
+                <p className="text-[13px] text-[#b54708]/80">
+                  This section displays demo health predictions. Real AI-powered insights based on your actual health data will be available in a future update.
+                </p>
+              </div>
+            </div>
+
             {/* Header Banner */}
             <div className="bg-[#9810fa] rounded-[16px] p-8 text-white shadow-lg overflow-hidden relative">
               <div className="relative z-10">
@@ -1038,7 +1070,9 @@ export default function PatientDashboardPage() {
                   Vitals
                 </h2>
                 <p className="text-[16px] text-[#475467] tracking-[-0.3125px]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                  Last updated: Today, 9:00 AM
+                  {vitalsData?.latest?.date 
+                    ? `Last updated: ${new Date(vitalsData.latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                    : 'No vitals recorded yet'}
                 </p>
               </div>
               <button className="flex items-center gap-2 px-4 py-2 bg-[#155dfc] text-white text-[14px] rounded-lg hover:bg-[#1d4ed8] transition-colors font-medium">
@@ -1047,173 +1081,197 @@ export default function PatientDashboardPage() {
               </button>
             </div>
 
-            {/* Vitals Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Blood Pressure */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#f3e8ff] flex items-center justify-center">
-                      <Activity className="w-5 h-5 text-[#9810fa]" />
-                    </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Blood Pressure</span>
-                  </div>
-                  <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
-                    Normal
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    120/80 <span className="text-[14px] font-normal text-[#667085] ml-1">mmHg</span>
-                  </p>
-                </div>
+            {/* Loading State */}
+            {vitalsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9810fa]"></div>
+                <span className="ml-3 text-[#475467]">Loading vitals...</span>
               </div>
+            ) : !vitalsData?.latest && vitalsData?.history?.length === 0 ? (
+              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-12 text-center">
+                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-[16px] text-[#475467]">No vitals recorded yet</p>
+                <p className="text-[14px] text-[#667085] mt-1">Your vitals will appear here after your first consultation</p>
+              </div>
+            ) : (
+              <>
+                {/* Vitals Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Blood Pressure */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#f3e8ff] flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-[#9810fa]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Blood Pressure</span>
+                      </div>
+                      {vitalsData?.summary?.bloodPressure && (
+                        <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
+                          Normal
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.bloodPressure?.value || vitalsData?.latest?.bloodPressure || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">mmHg</span>
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Heart Rate */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#fee4e2] flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-[#f04438]" />
+                  {/* Heart Rate */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#fee4e2] flex items-center justify-center">
+                          <Heart className="w-5 h-5 text-[#f04438]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Heart Rate</span>
+                      </div>
+                      {vitalsData?.summary?.heartRate && (
+                        <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
+                          Normal
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Heart Rate</span>
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.heartRate?.value || vitalsData?.latest?.heartRate || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">bpm</span>
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
-                    Normal
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    72 <span className="text-[14px] font-normal text-[#667085] ml-1">bpm</span>
-                  </p>
-                </div>
-              </div>
 
-              {/* Weight */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#f0f9ff] flex items-center justify-center">
-                      <Scale className="w-5 h-5 text-[#0ba5ec]" />
+                  {/* Weight */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#f0f9ff] flex items-center justify-center">
+                          <Scale className="w-5 h-5 text-[#0ba5ec]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Weight</span>
+                      </div>
                     </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Weight</span>
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.weight?.value || vitalsData?.latest?.weight || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">kg</span>
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-[#fef3f2] text-[#b42318] text-[12px] font-medium rounded-full">
-                    +2.1%
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    75.5 <span className="text-[14px] font-normal text-[#667085] ml-1">kg</span>
-                  </p>
-                </div>
-              </div>
 
-              {/* Blood Glucose */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#fff4ed] flex items-center justify-center">
-                      <Droplet className="w-5 h-5 text-[#ff8c00]" /> {/* Replaced Syringe with Droplet if available, or keep generic */}
-                      {/* Since Droplet isn't imported, I'll use Activity or similar, or just add Droplet to imports */}
+                  {/* Blood Glucose */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#fff4ed] flex items-center justify-center">
+                          <Droplet className="w-5 h-5 text-[#ff8c00]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Blood Glucose</span>
+                      </div>
                     </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Blood Glucose</span>
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.bloodGlucose?.value || vitalsData?.latest?.bloodGlucose || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">mg/dL</span>
+                      </p>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-[#fffaeb] text-[#b54708] text-[12px] font-medium rounded-full">
-                    Pre-Meal
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    95 <span className="text-[14px] font-normal text-[#667085] ml-1">mg/dL</span>
-                  </p>
-                </div>
-              </div>
 
-              {/* Body Temperature */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#fff1f2] flex items-center justify-center">
-                      <Thermometer className="w-5 h-5 text-[#e11d48]" />
+                  {/* Body Temperature */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#fff1f2] flex items-center justify-center">
+                          <Thermometer className="w-5 h-5 text-[#e11d48]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Temperature</span>
+                      </div>
+                      {vitalsData?.summary?.temperature && (
+                        <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
+                          Normal
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Temperature</span>
-                  </div>
-                   <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
-                    Normal
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    98.6 <span className="text-[14px] font-normal text-[#667085] ml-1">°F</span>
-                  </p>
-                </div>
-              </div>
-               {/* SpO2 */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#f0f9ff] flex items-center justify-center">
-                      <Activity className="w-5 h-5 text-[#0284c7]" />
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.temperature?.value || vitalsData?.latest?.temperature || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">°F</span>
+                      </p>
                     </div>
-                    <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>SpO2</span>
                   </div>
-                   <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
-                    Normal
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    98 <span className="text-[14px] font-normal text-[#667085] ml-1">%</span>
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Recent History Table */}
-            <div className="bg-white rounded-[16px] border border-[#f3e8ff] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] overflow-hidden">
-               <div className="p-6 border-b border-[#eaecf0]">
-                <h3 className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                  Recent Readings
-                </h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-[#f9fafb]">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Value</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-[#eaecf0]">
-                    {[
-                      { date: 'Today, 9:00 AM', type: 'Blood Pressure', value: '120/80 mmHg', status: 'Normal' },
-                      { date: 'Today, 9:00 AM', type: 'Heart Rate', value: '72 bpm', status: 'Normal' },
-                      { date: 'Yesterday, 8:00 AM', type: 'Weight', value: '75.5 kg', status: 'Warning' },
-                      { date: 'Yesterday, 8:00 AM', type: 'Blood Glucose', value: '95 mg/dL', status: 'Normal' },
-                      { date: 'Oct 24, 2024', type: 'Blood Pressure', value: '118/79 mmHg', status: 'Normal' },
-                    ].map((reading, i) => (
-                      <tr key={i} className="hover:bg-[#f9fafb] transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">{reading.date}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#101828]">{reading.type}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">{reading.value}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            reading.status === 'Normal' 
-                              ? 'bg-[#ecfdf3] text-[#027a48]' 
-                              : 'bg-[#fef3f2] text-[#b42318]'
-                          }`}>
-                            {reading.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  {/* SpO2 */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)] hover:border-[#9810fa] transition-colors">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#f0f9ff] flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-[#0284c7]" />
+                        </div>
+                        <span className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>SpO2</span>
+                      </div>
+                      {vitalsData?.summary?.spO2 && (
+                        <span className="px-2.5 py-0.5 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
+                          Normal
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[32px] font-semibold text-[#101828] tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {vitalsData?.summary?.spO2?.value || vitalsData?.latest?.spO2 || '--'} 
+                        <span className="text-[14px] font-normal text-[#667085] ml-1">%</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent History Table */}
+                {vitalsData?.history && vitalsData.history.length > 0 && (
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="p-6 border-b border-[#eaecf0]">
+                      <h3 className="text-[16px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        Recent Readings
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-[#f9fafb]">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Hospital</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">BP</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">HR</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-[#475467] uppercase tracking-wider">Temp</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-[#eaecf0]">
+                          {vitalsData.history.slice(0, 5).map((reading: any, i: number) => (
+                            <tr key={reading.id || i} className="hover:bg-[#f9fafb] transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">
+                                {new Date(reading.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#101828]">
+                                {reading.hospitalName || 'Unknown'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">
+                                {reading.bloodPressure || '--'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">
+                                {reading.heartRate ? `${reading.heartRate} bpm` : '--'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-[#475467]">
+                                {reading.temperature ? `${reading.temperature}°F` : '--'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -1230,166 +1288,145 @@ export default function PatientDashboardPage() {
               </button>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-6">
-              {/* Active Medications */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Active Medications</span>
-                  <LinkIcon className="w-5 h-5 text-[#155dfc]" />
-                </div>
-                <p className="text-[24px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>3</p>
+            {/* Loading State */}
+            {medicationsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9810fa]"></div>
+                <span className="ml-3 text-[#475467]">Loading medications...</span>
               </div>
-
-              {/* Taken Today */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Taken Today</span>
-                  <Check className="w-5 h-5 text-[#008236]" />
-                </div>
-                <p className="text-[24px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>2/3</p>
+            ) : medications.current.length === 0 && medications.past.length === 0 ? (
+              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-12 text-center">
+                <Pill className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-[16px] text-[#475467]">No medications recorded yet</p>
+                <p className="text-[14px] text-[#667085] mt-1">Your prescribed medications will appear here after consultations</p>
               </div>
-
-              {/* Upcoming */}
-              <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Upcoming</span>
-                  <Bell className="w-5 h-5 text-[#f59e0b]" />
-                </div>
-                <p className="text-[16px] font-medium text-[#101828] mt-2" style={{ fontFamily: 'Inter, sans-serif' }}>2 doses</p>
-              </div>
-            </div>
-
-            {/* Today's Schedule */}
-            <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[16px] font-semibold text-[#101828] mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-                Today's Schedule
-              </h3>
-              <div className="space-y-4">
-                {/* Taken Item 1 */}
-                <div className="flex items-center justify-between p-4 bg-[#f0fdf4] border border-[#dcfce7] rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#16a34a] flex items-center justify-center text-white">
-                      <Check className="w-6 h-6" />
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-6">
+                  {/* Active Medications */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Active Medications</span>
+                      <LinkIcon className="w-5 h-5 text-[#155dfc]" />
                     </div>
-                    <div>
-                      <p className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Metformin - 500mg</p>
-                      <p className="text-[14px] text-[#475467] flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        <Clock className="w-3.5 h-3.5" />
-                        8:00 AM
-                      </p>
-                    </div>
+                    <p className="text-[24px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      {medications.current.length}
+                    </p>
                   </div>
-                  <span className="px-4 py-1.5 bg-[#16a34a] text-white text-[14px] font-medium rounded-lg">
-                    Taken
-                  </span>
-                </div>
 
-                {/* Upcoming Item */}
-                <div className="flex items-center justify-between p-4 bg-white border border-[#e5e7eb] rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#f2f4f7] flex items-center justify-center text-[#475467]">
-                      <Pill className="w-5 h-5" />
+                  {/* Past Medications */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Past Medications</span>
+                      <Check className="w-5 h-5 text-[#667085]" />
                     </div>
-                    <div>
-                      <p className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Atorvastatin - 10mg</p>
-                      <p className="text-[14px] text-[#475467] flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        <Clock className="w-3.5 h-3.5" />
-                        9:00 PM
-                      </p>
-                    </div>
+                    <p className="text-[24px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      {medications.past.length}
+                    </p>
                   </div>
-                  <button className="px-4 py-1.5 bg-white text-[#344054] text-[14px] font-medium border border-[#d0d5dd] rounded-lg hover:bg-gray-50 transition-colors">
-                    Mark as Taken
-                  </button>
-                </div>
 
-                {/* Taken Item 2 (Vitamin D3) - Matching the visual design of a taken item */}
-                 <div className="flex items-center justify-between p-4 bg-[#f0fdf4] border border-[#dcfce7] rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#16a34a] flex items-center justify-center text-white">
-                      <Check className="w-6 h-6" />
+                  {/* Total */}
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_4px_6px_-2px_rgba(0,0,0,0.05)]">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>Total Prescribed</span>
+                      <Pill className="w-5 h-5 text-[#9810fa]" />
                     </div>
-                    <div>
-                      <p className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>Vitamin D3 - 1000 IU</p>
-                      <p className="text-[14px] text-[#475467] flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        <Clock className="w-3.5 h-3.5" />
-                        9:00 AM
-                      </p>
-                    </div>
+                    <p className="text-[24px] font-semibold text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      {medications.current.length + medications.past.length}
+                    </p>
                   </div>
-                  <span className="px-4 py-1.5 bg-[#16a34a] text-white text-[14px] font-medium rounded-lg">
-                    Taken
-                  </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Active Medications List */}
-            <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
-              <h3 className="text-[16px] font-semibold text-[#101828] mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
-                Active Medications
-              </h3>
+                {/* Active Medications List */}
+                {medications.current.length > 0 && (
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+                    <h3 className="text-[16px] font-semibold text-[#101828] mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      Active Medications
+                    </h3>
 
-              <div className="divide-y divide-[#eaecf0]">
-                {[
-                  {
-                    name: "Metformin",
-                    dose: "500mg",
-                    freq: "Twice daily",
-                    time: "8:00 AM, 8:00 PM",
-                    range: "2024-11-01 to 2025-01-01",
-                    doctor: "Dr. Michael Chen"
-                  },
-                  {
-                    name: "Atorvastatin",
-                    dose: "10mg",
-                    freq: "Once daily",
-                    time: "9:00 PM",
-                    range: "2024-10-15 to 2025-04-15",
-                    doctor: "Dr. Sarah Johnson"
-                  },
-                  {
-                    name: "Vitamin D3",
-                    dose: "1000 IU",
-                    freq: "Once daily",
-                    time: "9:00 AM",
-                    range: "2024-11-20 to 2025-05-20",
-                    doctor: "Dr. Robert Brown"
-                  }
-                ].map((med, i) => (
-                  <div key={i} className="py-6 first:pt-0 last:pb-0">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <p className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>{med.name}</p>
-                        <p className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>{med.dose} - {med.freq}</p>
-                        <div className="flex items-center gap-4 mt-2 text-[14px] text-[#475467]">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-[#667085]" />
-                            {med.time}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4 text-[#667085]" />
-                            {med.range}
-                          </span>
+                    <div className="divide-y divide-[#eaecf0]">
+                      {medications.current.map((med: MedicationItem, i: number) => (
+                        <div key={med.id || i} className="py-6 first:pt-0 last:pb-0">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <p className="text-[16px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                {med.name}
+                              </p>
+                              <p className="text-[14px] text-[#475467]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                {med.dosage} {med.frequency && `- ${med.frequency}`}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2 text-[14px] text-[#475467]">
+                                {med.startDate && (
+                                  <span className="flex items-center gap-1.5">
+                                    <Calendar className="w-4 h-4 text-[#667085]" />
+                                    Started: {new Date(med.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </span>
+                                )}
+                                {med.duration && (
+                                  <span className="flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4 text-[#667085]" />
+                                    {med.duration}
+                                  </span>
+                                )}
+                              </div>
+                              {med.prescriber && (
+                                <p className="text-[14px] text-[#667085] mt-1" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                  Prescribed by {med.prescriber}
+                                  {med.prescriberSpecialty && ` (${med.prescriberSpecialty})`}
+                                </p>
+                              )}
+                              {med.instructions && (
+                                <p className="text-[13px] text-[#9810fa] mt-2 italic" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                  {med.instructions}
+                                </p>
+                              )}
+                            </div>
+                            <span className="px-3 py-1 bg-[#ecfdf3] text-[#027a48] text-[12px] font-medium rounded-full">
+                              Active
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-[14px] text-[#667085] mt-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                          Prescribed by {med.doctor}
-                        </p>
-                      </div>
-                      <div className="flex gap-3">
-                        <button className="px-4 py-2 bg-white text-[#344054] text-[14px] font-medium border border-[#d0d5dd] rounded-lg hover:bg-gray-50 transition-colors">
-                          Edit
-                        </button>
-                        <button className="px-4 py-2 bg-white text-[#b42318] text-[14px] font-medium border border-[#fda29b] rounded-lg hover:bg-[#fef2f2] transition-colors">
-                          Stop
-                        </button>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
+
+                {/* Past Medications List */}
+                {medications.past.length > 0 && (
+                  <div className="bg-white rounded-[16px] border border-[#f3e8ff] p-6 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+                    <h3 className="text-[16px] font-semibold text-[#101828] mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      Past Medications
+                    </h3>
+
+                    <div className="divide-y divide-[#eaecf0]">
+                      {medications.past.slice(0, 5).map((med: MedicationItem, i: number) => (
+                        <div key={med.id || i} className="py-4 first:pt-0 last:pb-0">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <p className="text-[16px] font-medium text-[#667085]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                {med.name}
+                              </p>
+                              <p className="text-[14px] text-[#9ca3af]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                {med.dosage} {med.frequency && `- ${med.frequency}`}
+                              </p>
+                              {med.prescriber && (
+                                <p className="text-[13px] text-[#9ca3af]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                  By {med.prescriber}
+                                </p>
+                              )}
+                            </div>
+                            <span className="px-3 py-1 bg-[#f2f4f7] text-[#667085] text-[12px] font-medium rounded-full">
+                              Completed
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -1497,14 +1534,15 @@ export default function PatientDashboardPage() {
               <div className="mb-6">
                 <p className="text-[14px] text-[#475467] mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>Allergies</p>
                 <div className="flex flex-wrap gap-2">
-                  {(patientProfile?.allergies && patientProfile.allergies.length > 0 
-                    ? patientProfile.allergies 
-                    : ['Penicillin', 'Peanuts']
-                  ).map((allergy: string, i: number) => (
-                    <span key={i} className="px-3 py-1 bg-[#fef3f2] text-[#ef4444] text-[14px] rounded-full border border-[#fecaca]">
-                      {allergy}
-                    </span>
-                  ))}
+                  {patientProfile?.allergies && patientProfile.allergies.length > 0 ? (
+                    patientProfile.allergies.map((allergy: string, i: number) => (
+                      <span key={i} className="px-3 py-1 bg-[#fef3f2] text-[#ef4444] text-[14px] rounded-full border border-[#fecaca]">
+                        {allergy}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[14px] text-[#667085] italic">None recorded</span>
+                  )}
                 </div>
               </div>
 
@@ -1512,14 +1550,15 @@ export default function PatientDashboardPage() {
               <div className="mb-6">
                 <p className="text-[14px] text-[#475467] mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>Chronic Conditions</p>
                 <div className="flex flex-wrap gap-2">
-                  {(patientProfile?.chronicConditions && patientProfile.chronicConditions.length > 0 
-                    ? patientProfile.chronicConditions 
-                    : ['Type 2 Diabetes', 'Hypertension']
-                  ).map((condition: string, i: number) => (
-                    <span key={i} className="px-3 py-1 bg-[#fef3f2] text-[#ef4444] text-[14px] rounded-full border border-[#fecaca]">
-                      {condition}
-                    </span>
-                  ))}
+                  {patientProfile?.chronicConditions && patientProfile.chronicConditions.length > 0 ? (
+                    patientProfile.chronicConditions.map((condition: string, i: number) => (
+                      <span key={i} className="px-3 py-1 bg-[#fef3f2] text-[#ef4444] text-[14px] rounded-full border border-[#fecaca]">
+                        {condition}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[14px] text-[#667085] italic">None recorded</span>
+                  )}
                 </div>
               </div>
 
@@ -1527,22 +1566,31 @@ export default function PatientDashboardPage() {
               <div>
                 <p className="text-[14px] text-[#475467] mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>Current Medications</p>
                 <div className="space-y-3">
-                  {(patientProfile?.medications && patientProfile.medications.length > 0 
-                    ? patientProfile.medications 
-                    : [
-                        { name: 'Metformin 500mg', dosage: 'Twice daily' },
-                        { name: 'Atorvastatin 10mg', dosage: 'Once daily at night' }
-                      ]
-                  ).map((med: { name: string; dosage: string }, i: number) => (
-                    <div key={i} className="p-4 bg-[#faf5ff] rounded-lg border-l-4 border-[#9810fa]">
-                      <p className="text-[14px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        {med.name}
-                      </p>
-                      <p className="text-[12px] text-[#667085]" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        {med.dosage}
-                      </p>
-                    </div>
-                  ))}
+                  {patientProfile?.medications && patientProfile.medications.length > 0 ? (
+                    patientProfile.medications.map((med: { name: string; dosage: string }, i: number) => (
+                      <div key={i} className="p-4 bg-[#faf5ff] rounded-lg border-l-4 border-[#9810fa]">
+                        <p className="text-[14px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                          {med.name}
+                        </p>
+                        <p className="text-[12px] text-[#667085]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                          {med.dosage}
+                        </p>
+                      </div>
+                    ))
+                  ) : medications.current.length > 0 ? (
+                    medications.current.slice(0, 3).map((med: MedicationItem, i: number) => (
+                      <div key={i} className="p-4 bg-[#faf5ff] rounded-lg border-l-4 border-[#9810fa]">
+                        <p className="text-[14px] font-medium text-[#101828]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                          {med.name} {med.dosage && `- ${med.dosage}`}
+                        </p>
+                        <p className="text-[12px] text-[#667085]" style={{ fontFamily: 'Inter, sans-serif' }}>
+                          {med.frequency || 'As prescribed'}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-[14px] text-[#667085] italic">No active medications</span>
+                  )}
                 </div>
               </div>
             </div>
