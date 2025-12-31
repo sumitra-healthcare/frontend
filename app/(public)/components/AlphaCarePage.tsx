@@ -137,23 +137,21 @@ function Navigation() {
           >
             About
           </Link>
-        </div>
-
-        {/* Auth Buttons */}
-        <div className="flex items-center gap-[24px]">
           <Link 
-            href="/login" 
+            href="/contact" 
             className="text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors"
           >
-            Login
-          </Link>
-          <Link 
-            href="/register" 
-            className="px-[28px] py-[12px] bg-[#1376F8] text-white text-[16px] font-medium rounded-[8px] hover:bg-[#0d5bc7] transition-colors shadow-md"
-          >
-            Sign up
+            Contact
           </Link>
         </div>
+
+        {/* Contact Button */}
+        <Link 
+          href="/contact" 
+          className="px-[28px] py-[12px] bg-[#1376F8] text-white text-[16px] font-medium rounded-[8px] hover:bg-[#0d5bc7] transition-colors shadow-md"
+        >
+          Contact Us
+        </Link>
       </div>
     </nav>
   );
@@ -652,38 +650,84 @@ function TestimonialsSection() {
 }
 
 /* ============================================
-   CTA SECTION
+   CTA SECTION - Exact Figma Match
    ============================================ */
 function CTASection() {
   return (
-    <section className="relative py-[100px] bg-gradient-to-r from-[#1376F8] via-[#0d5bc7] to-[#25B4F8] overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-3xl" />
+    <section className="relative py-[80px] overflow-hidden" style={{ background: 'linear-gradient(135deg, #1376F8 0%, #25B4F8 50%, #1376F8 100%)' }}>
+      {/* Background blurred circles */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-[56px] left-[56px] w-[400px] h-[400px] bg-white rounded-full blur-[89px]" />
+        <div className="absolute top-[100px] right-[100px] w-[537px] h-[537px] bg-white rounded-full blur-[89px]" />
       </div>
 
-      <div className="relative max-w-[1440px] mx-auto px-[140px] text-center">
-        <h2 className="font-['Yeseva_One'] text-[40px] text-white mb-[16px]">
-          Are You a Doctor or Health Facility?
-        </h2>
-        <p className="text-[18px] text-white/80 mb-[40px] max-w-[600px] mx-auto">
-          Join thousands of healthcare providers who trust Alpha Care to manage their practice efficiently.
-        </p>
+      {/* Main rounded container */}
+      <div className="relative max-w-[1200px] mx-auto px-[80px]">
+        <div className="bg-[#1e90ff]/80 backdrop-blur-sm rounded-[24px] py-[60px] px-[80px] text-center">
+          {/* Headline */}
+          <h2 className="text-[24px] font-semibold text-white mb-[16px]">
+            Ready to Transform Your Healthcare Experience?
+          </h2>
+          
+          {/* Description */}
+          <p className="text-[16px] text-white/80 mb-[32px] max-w-[600px] mx-auto">
+            Join thousands of healthcare professionals and patients who trust Alpha Care for their health management needs.
+          </p>
 
-        <div className="flex justify-center gap-[20px]">
-          <Link
-            href="/doctor"
-            className="px-[32px] py-[16px] bg-white text-[#1376F8] text-[16px] font-semibold rounded-[8px] hover:bg-gray-100 transition-colors"
-          >
-            Join as Doctor
-          </Link>
-          <Link
-            href="/patient/book"
-            className="px-[32px] py-[16px] bg-transparent text-white text-[16px] font-semibold rounded-[8px] border-2 border-white hover:bg-white/10 transition-colors"
-          >
-            Find a Doctor
-          </Link>
+          {/* Checkmarks */}
+          <div className="flex justify-center gap-[32px] mb-[32px]">
+            <div className="flex items-center gap-[8px]">
+              <div className="w-[20px] h-[20px] rounded-full border-2 border-white flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <span className="text-[14px] text-white">Free to get started</span>
+            </div>
+            <div className="flex items-center gap-[8px]">
+              <div className="w-[20px] h-[20px] rounded-full border-2 border-white flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <span className="text-[14px] text-white">No credit card required</span>
+            </div>
+            <div className="flex items-center gap-[8px]">
+              <div className="w-[20px] h-[20px] rounded-full border-2 border-white flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <span className="text-[14px] text-white">Setup in 2 minutes</span>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-center gap-[16px] mb-[32px]">
+            <Link
+              href="/patient/register"
+              className="px-[32px] py-[14px] bg-white text-[#1376F8] text-[16px] font-semibold rounded-[8px] hover:bg-gray-100 transition-colors flex items-center gap-[8px]"
+            >
+              Get Started Now
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+            <Link
+              href="/contact"
+              className="px-[32px] py-[14px] bg-[#34C759] text-white text-[16px] font-semibold rounded-[8px] hover:bg-[#2db84e] transition-colors"
+            >
+              Schedule a Demo
+            </Link>
+          </div>
+
+          {/* Contact email */}
+          <p className="text-[14px] text-white/80">
+            Questions? Contact us at{' '}
+            <a href="mailto:support@alphacare.com" className="text-white underline hover:no-underline">
+              support@alphacare.com
+            </a>
+          </p>
         </div>
       </div>
     </section>

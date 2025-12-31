@@ -1,7 +1,10 @@
 import React from 'react';
-import { PublicNav } from '@/components/layout/PublicNav';
-import { PublicFooter } from '@/components/layout/PublicFooter';
 
+/**
+ * Public pages layout - Clean wrapper without old design components
+ * Individual pages (home, contact, about) have their own Navigation and Footer
+ * matching the new AlphaCare Figma design
+ */
 export default function PublicLayout({
   children,
 }: {
@@ -9,11 +12,9 @@ export default function PublicLayout({
 }) {
   return (
     <div className="relative min-h-screen">
-      <PublicNav />
       <main className="relative">
         {children}
       </main>
-      <PublicFooter />
     </div>
   );
 }

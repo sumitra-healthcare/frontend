@@ -1,320 +1,682 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-  FileText,
-  Calendar,
-  Users,
-  BarChart3,
-  Clock,
-  Shield,
-  Stethoscope,
-  ArrowRight,
-  CheckCircle2,
-  Star,
-} from "lucide-react";
-import { PublicNav } from "@/components/layout/PublicNav";
-import { PublicFooter } from "@/components/layout/PublicFooter";
-import { GlassCard } from "@/components/glass/GlassCard";
-import { GradientText } from "@/components/gradient/GradientText";
-import { GradientWave } from "@/components/gradient/GradientWave";
-import { GradientMesh } from "@/components/gradient/GradientMesh";
-import { FadeIn } from "@/components/animation/FadeIn";
-import { StaggerChildren } from "@/components/animation/StaggerChildren";
-import { GlassButton } from "@/components/glass/GlassButton";
+import Image from "next/image";
 
-const features = [
-  {
-    icon: <FileText className="w-6 h-6" />,
-    title: "Smart Documentation",
-    description:
-      "AI-powered clinical notes with voice-to-text and template customization for faster documentation.",
-  },
-  {
-    icon: <Calendar className="w-6 h-6" />,
-    title: "Appointment Management",
-    description:
-      "Seamless scheduling with automated reminders, calendar sync, and real-time availability.",
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    title: "Patient Portal Integration",
-    description:
-      "Direct communication channel with secure messaging and file sharing capabilities.",
-  },
-  {
-    icon: <BarChart3 className="w-6 h-6" />,
-    title: "Analytics Dashboard",
-    description:
-      "Real-time insights into practice performance, patient outcomes, and revenue trends.",
-  },
-  {
-    icon: <Clock className="w-6 h-6" />,
-    title: "Time-Saving Workflows",
-    description:
-      "Reduce documentation time by 40% with intelligent automation and smart templates.",
-  },
-  {
-    icon: <Shield className="w-6 h-6" />,
-    title: "HIPAA Compliance",
-    description:
-      "Bank-level encryption and comprehensive audit trails to keep patient data secure.",
-  },
-];
-
-const benefits = [
-  "Reduce administrative burden by 60%",
-  "Improve patient satisfaction scores",
-  "Access records from any device",
-  "Seamless integration with lab systems",
-  "24/7 technical support",
-  "Free training and onboarding",
-];
-
-const testimonials = [
-  {
-    name: "Dr. Priya Sharma",
-    specialty: "Cardiologist",
-    quote: "MedMitra has transformed how I manage my practice. Documentation time cut in half!",
-    rating: 5,
-  },
-  {
-    name: "Dr. Rajesh Kumar",
-    specialty: "General Physician",
-    quote: "The patient portal integration is seamless. My patients love the easy access to their records.",
-    rating: 5,
-  },
-];
+/**
+ * Doctor Portal Landing Page - Exact Figma Implementation
+ * Node ID: 221-1169
+ * Matching the design pixel-for-pixel
+ */
 
 export default function DoctorPortalPage() {
   return (
-    <>
-      <PublicNav />
-      
+    <div className="relative w-full min-h-screen bg-white overflow-x-hidden font-['Inter',sans-serif]">
+      {/* Navigation */}
+      <Navigation />
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <GradientMesh variant="hero" baseColor="#EFF6FF" />
-          <GradientWave
-            position="bottom"
-            height={30}
-            colors={{ start: "#DBEAFE", middle: "#BFDBFE", end: "#EFF6FF" }}
-            animated
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <FadeIn>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-blue mb-6">
-                <Stethoscope className="w-4 h-4 text-sky-deep" />
-                <span className="text-sm font-semibold text-sky-deep">Doctor Portal</span>
-              </div>
-
-              <GradientText
-                as="h1"
-                gradient="primary"
-                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6"
-              >
-                Built for Modern Physicians
-              </GradientText>
-
-              <p className="text-xl text-ocean-mid/80 dark:text-white/80 mb-8 leading-relaxed">
-                Focus on patient care while we handle the paperwork. Our intelligent EMR 
-                adapts to your workflow, saves time, and enhances patient outcomes.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/doctor/login">
-                  <GlassButton
-                    variant="gradient"
-                    gradient="primary"
-                    size="lg"
-                    iconAfter={<ArrowRight className="w-5 h-5" />}
-                    className="w-full sm:w-auto"
-                  >
-                    Sign In
-                  </GlassButton>
-                </Link>
-                <Link href="/doctor/register">
-                  <GlassButton
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
-                    Create Account
-                  </GlassButton>
-                </Link>
-              </div>
-            </FadeIn>
-
-            {/* Right - Stats Card */}
-            <FadeIn delay={0.2}>
-              <GlassCard variant="strong" padding="xl" rounded="3xl" className="shadow-glass-xl">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="text-center p-4">
-                    <div className="text-4xl font-bold text-gradient-primary mb-2">10K+</div>
-                    <p className="text-sm text-ocean-mid/70">Active Doctors</p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="text-4xl font-bold text-gradient-primary mb-2">40%</div>
-                    <p className="text-sm text-ocean-mid/70">Time Saved</p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="text-4xl font-bold text-gradient-primary mb-2">1M+</div>
-                    <p className="text-sm text-ocean-mid/70">Patients Served</p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="text-4xl font-bold text-gradient-primary mb-2">99.9%</div>
-                    <p className="text-sm text-ocean-mid/70">Uptime</p>
-                  </div>
-                </div>
-              </GlassCard>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* Features Section */}
-      <section className="relative py-20 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <FadeIn className="text-center mb-16 w-full">
-            <GradientText
-              as="h2"
-              gradient="primary"
-              className="text-3xl md:text-4xl font-bold mb-4"
-            >
-              Everything You Need to Run Your Practice
-            </GradientText>
-            {/* <p className="text-lg text-ocean-mid/70 dark:text-white/70 max-w-2xl ">
-              Comprehensive tools designed specifically for healthcare professionals
-            </p> */}
-          </FadeIn>
+      <FeaturesSection />
 
-          <StaggerChildren
-            variant="slide-up"
-            staggerDelay={0.1}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {features.map((feature) => (
-              <div key={feature.title}>
-                <GlassCard
-                  variant="default"
-                  hover
-                  padding="lg"
-                  rounded="2xl"
-                  className="h-full group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-glow-blue">
-                    <div className="text-white">{feature.icon}</div>
-                  </div>
-                  <h3 className="text-xl font-bold text-ocean-deep dark:text-white mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-ocean-mid/70 dark:text-white/70">
-                    {feature.description}
-                  </p>
-                </GlassCard>
-              </div>
-            ))}
-          </StaggerChildren>
-        </div>
-      </section>
+      {/* Pricing Section */}
+      <PricingSection />
 
-      {/* Benefits Section */}
-      <section className="relative py-20 overflow-hidden">
-        <GradientMesh variant="subtle" baseColor="#EFF6FF" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <FadeIn>
-              <GradientText
-                as="h2"
-                gradient="primary"
-                className="text-3xl md:text-4xl font-bold mb-6"
-              >
-                Why Doctors Choose MedMitra
-              </GradientText>
-              <div className="space-y-4">
-                {benefits.map((benefit) => (
-                  <div key={benefit} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-lg text-ocean-mid dark:text-white/90">{benefit}</span>
-                  </div>
-                ))}
-              </div>
-            </FadeIn>
+      {/* Video Feature Section */}
+      <VideoFeatureSection />
 
-            <FadeIn delay={0.2}>
-              <div className="space-y-6">
-                {testimonials.map((testimonial, index) => (
-                  <GlassCard key={index} variant="default" padding="lg" rounded="2xl">
-                    <div className="flex gap-1 mb-3">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-ocean-mid dark:text-white/90 mb-4 italic">
-                      &quot;{testimonial.quote}&quot;
-                    </p>
-                    <div>
-                      <p className="font-semibold text-ocean-deep dark:text-white">
-                        {testimonial.name}
-                      </p>
-                      <p className="text-sm text-ocean-mid/70 dark:text-white/70">
-                        {testimonial.specialty}
-                      </p>
-                    </div>
-                  </GlassCard>
-                ))}
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Doctor Quote Section */}
+      <DoctorQuoteSection />
 
       {/* CTA Section */}
-      <section className="relative py-20">
-        <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-8 text-center">
-          <FadeIn className="w-full">
-            <GradientText
-              as="h2"
-              gradient="primary"
-              className="text-3xl md:text-4xl font-bold mb-4"
-            >
-              Ready to Transform Your Practice?
-            </GradientText>
-            {/* <p className="text-lg text-ocean-mid/70 dark:text-white/70 mb-8 max-w-2xl mx-auto">
-              Join thousands of doctors who have already made the switch to MedMitra. 
-              Start your free trial today.
-            </p> */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/doctor/register">
-                <GlassButton
-                  variant="gradient"
-                  gradient="primary"
-                  size="lg"
-                  iconAfter={<ArrowRight className="w-5 h-5" />}
-                >
-                  Start Free Trial
-                </GlassButton>
+      <CTASection />
+
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
+}
+
+/* ============================================
+   NAVIGATION - Exact Figma Match
+   ============================================ */
+function Navigation() {
+  return (
+    <nav className="absolute top-0 left-0 right-0 z-50 px-[136px] py-[12px] bg-white">
+      <div className="flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-[8px]">
+          <div className="w-[32px] h-[32px] rounded-full bg-gradient-to-br from-[#155dfc] to-[#1447e6] flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <span className="text-[18px] font-semibold text-[#155dfc]">AlphaCare</span>
+        </Link>
+
+        {/* Nav Links - Center */}
+        <div className="flex items-center gap-[32px]">
+          <Link href="#features" className="text-[14px] text-[#4a5565] hover:text-[#155dfc] transition-colors">
+            Features
+          </Link>
+          <Link href="#pricing" className="text-[14px] text-[#4a5565] hover:text-[#155dfc] transition-colors">
+            Pricing
+          </Link>
+          <Link href="#demo" className="text-[14px] text-[#4a5565] hover:text-[#155dfc] transition-colors">
+            Demo
+          </Link>
+          <Link href="#support" className="text-[14px] text-[#4a5565] hover:text-[#155dfc] transition-colors">
+            Support
+          </Link>
+        </div>
+
+        {/* Auth Buttons */}
+        <div className="flex items-center gap-[16px]">
+          <Link 
+            href="/doctor/login" 
+            className="text-[14px] text-[#4a5565] hover:text-[#155dfc] transition-colors"
+          >
+            Doctor Login
+          </Link>
+          <Link 
+            href="/doctor/register" 
+            className="px-[20px] py-[8px] bg-gradient-to-r from-[#155dfc] to-[#1447e6] text-white text-[14px] font-medium rounded-[14px] hover:opacity-90 transition-opacity"
+          >
+            Get Started
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ============================================
+   HERO SECTION - Exact Figma Match
+   ============================================ */
+function HeroSection() {
+  return (
+    <section className="relative w-full pt-[64px]" style={{ background: 'linear-gradient(180deg, #EAF2FF 0%, #EAF2FF 100%)' }}>
+      <div className="max-w-[1488px] mx-auto px-[136px] py-[80px]">
+        <div className="flex items-center justify-between gap-[60px]">
+          {/* Left Content */}
+          <div className="max-w-[500px]">
+            <p className="text-[14px] font-medium text-[#155dfc] mb-[12px] tracking-wide">
+              FOR HEALTHCARE PROVIDERS
+            </p>
+            <h1 className="text-[42px] font-bold leading-[1.2] text-[#101828] mb-[20px]">
+              Streamline Your Medical Practice with AlphaCare
+            </h1>
+            <p className="text-[16px] leading-[1.6] text-[#4a5565] mb-[32px]">
+              A complete solution for managing patients, scheduling appointments, and maintaining health records. Focus on what matters most - providing excellent care.
+            </p>
+            
+            {/* Buttons */}
+            <div className="flex items-center gap-[16px] mb-[40px]">
+              <Link 
+                href="/doctor/register"
+                className="px-[24px] py-[12px] bg-gradient-to-r from-[#155dfc] to-[#1447e6] text-white text-[16px] font-medium rounded-[8px] hover:opacity-90 transition-opacity"
+              >
+                Start Free Trial
               </Link>
-              <Link href="/contact">
-                <GlassButton variant="outline" size="lg">
-                  Contact Sales
-                </GlassButton>
+              <Link 
+                href="#demo"
+                className="px-[24px] py-[12px] bg-white text-[#155dfc] text-[16px] font-medium rounded-[8px] border border-[#155dfc] hover:bg-[#f0f5ff] transition-colors"
+              >
+                Watch Demo
               </Link>
             </div>
-          </FadeIn>
-        </div>
-      </section>
 
-      <PublicFooter />
-    </>
+            {/* Stats */}
+            <div className="flex items-center gap-[32px]">
+              <div>
+                <p className="text-[20px] font-bold text-[#101828]">10K+</p>
+                <p className="text-[14px] text-[#4a5565]">Active Doctors</p>
+              </div>
+              <div>
+                <p className="text-[20px] font-bold text-[#101828]">500K+</p>
+                <p className="text-[14px] text-[#4a5565]">Patients Served</p>
+              </div>
+              <div>
+                <p className="text-[20px] font-bold text-[#101828]">4.9/5</p>
+                <p className="text-[14px] text-[#4a5565]">User Rating</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Image */}
+          <div className="relative w-[584px] h-[502px] rounded-[27px] overflow-hidden shadow-2xl flex-shrink-0">
+            <Image
+              src="/images/doctor/doctor-hero-2.png"
+              alt="Healthcare Professional"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   FEATURES SECTION - Exact Figma Match
+   ============================================ */
+function FeaturesSection() {
+  const features = [
+    {
+      icon: "/images/doctor/icon-patient.svg",
+      title: "Patient Management",
+      description: "Comprehensive patient records and history at your fingertips",
+    },
+    {
+      icon: "/images/doctor/icon-schedule.svg",
+      title: "Appointment Scheduling",
+      description: "Easy scheduling with automated reminders and sync",
+    },
+    {
+      icon: "/images/doctor/icon-chart.svg",
+      title: "Health Analytics",
+      description: "Real-time insights into practice performance",
+    },
+    {
+      icon: "/images/doctor/icon-records.svg",
+      title: "Medical Records",
+      description: "Secure digital records with easy access anytime",
+    },
+    {
+      icon: "/images/doctor/icon-billing.svg",
+      title: "Billing & Payments",
+      description: "Streamlined billing with integrated payment solutions",
+    },
+    {
+      icon: "/images/doctor/icon-security.svg",
+      title: "Save Time",
+      description: "Reduce administrative work by up to 40%",
+    },
+  ];
+
+  return (
+    <section id="features" className="py-[80px] bg-white">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        {/* Section Header */}
+        <div className="text-center mb-[64px]">
+          <h2 className="text-[20px] font-medium text-[#101828] mb-[16px]">
+            Powerful Features for Modern Healthcare
+          </h2>
+          <p className="text-[16px] text-[#4a5565]">
+            Everything you need to run an efficient, patient-centered practice
+          </p>
+        </div>
+
+        {/* Features Grid - 3 columns, 2 rows */}
+        <div className="grid grid-cols-3 gap-[24px]">
+          {features.map((feature, index) => (
+            <div 
+              key={index} 
+              className="bg-white border border-[#dbeafe] rounded-[16px] p-[25px] hover:shadow-lg transition-shadow"
+            >
+              {/* Icon */}
+              <div className="w-[48px] h-[48px] rounded-[12px] bg-[#dbeafe] flex items-center justify-center mb-[20px]">
+                <Image
+                  src={feature.icon}
+                  alt={feature.title}
+                  width={24}
+                  height={24}
+                />
+              </div>
+              
+              <h3 className="text-[16px] font-medium text-[#101828] mb-[8px]">
+                {feature.title}
+              </h3>
+              <p className="text-[16px] text-[#4a5565] leading-[1.5]">
+                {feature.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   PRICING SECTION - Exact Figma Match
+   ============================================ */
+function PricingSection() {
+  const plans = [
+    {
+      name: "Starter",
+      price: "$29",
+      period: "/month",
+      description: "Perfect for individual practitioners",
+      features: [
+        "Up to 100 patients",
+        "Basic scheduling",
+        "Email support",
+        "Standard reports",
+        "1 user account",
+      ],
+      highlighted: false,
+    },
+    {
+      name: "Professional",
+      price: "$79",
+      period: "/month",
+      description: "Best for growing practices",
+      features: [
+        "Up to 500 patients",
+        "Advanced scheduling",
+        "Priority support",
+        "Custom reports",
+        "5 user accounts",
+        "Analytics dashboard",
+        "API access",
+      ],
+      highlighted: true,
+    },
+    {
+      name: "Enterprise",
+      price: "$149",
+      period: "/month",
+      description: "For large medical facilities",
+      features: [
+        "Unlimited patients",
+        "Full scheduling suite",
+        "24/7 phone support",
+        "Custom integrations",
+        "Unlimited users",
+        "White-label option",
+        "Dedicated account manager",
+      ],
+      highlighted: false,
+    },
+  ];
+
+  return (
+    <section id="pricing" className="py-[80px] bg-[#f9fafb]">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        {/* Section Header */}
+        <div className="text-center mb-[60px]">
+          <h2 className="text-[28px] font-semibold text-[#101828] mb-[12px]">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="text-[16px] text-[#4a5565]">
+            Choose the plan that best fits your practice needs
+          </p>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-3 gap-[24px]">
+          {plans.map((plan, index) => (
+            <div 
+              key={index} 
+              className={`rounded-[20px] p-[32px] ${
+                plan.highlighted 
+                  ? 'bg-gradient-to-br from-[#155dfc] to-[#1447e6] text-white' 
+                  : 'bg-white border border-[#e5e7eb]'
+              }`}
+            >
+              <h3 className={`text-[20px] font-semibold mb-[8px] ${plan.highlighted ? 'text-white' : 'text-[#101828]'}`}>
+                {plan.name}
+              </h3>
+              <p className={`text-[14px] mb-[20px] ${plan.highlighted ? 'text-white/80' : 'text-[#4a5565]'}`}>
+                {plan.description}
+              </p>
+              
+              <div className="flex items-baseline gap-[4px] mb-[24px]">
+                <span className={`text-[40px] font-bold ${plan.highlighted ? 'text-white' : 'text-[#101828]'}`}>
+                  {plan.price}
+                </span>
+                <span className={`text-[14px] ${plan.highlighted ? 'text-white/80' : 'text-[#4a5565]'}`}>
+                  {plan.period}
+                </span>
+              </div>
+
+              <ul className="space-y-[12px] mb-[32px]">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-[8px]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={plan.highlighted ? 'white' : '#155dfc'} strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span className={`text-[14px] ${plan.highlighted ? 'text-white' : 'text-[#4a5565]'}`}>
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <button 
+                className={`w-full py-[12px] rounded-[8px] text-[14px] font-medium transition-all ${
+                  plan.highlighted 
+                    ? 'bg-white text-[#155dfc] hover:bg-gray-100' 
+                    : 'bg-[#155dfc] text-white hover:opacity-90'
+                }`}
+              >
+                Get Started
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   VIDEO FEATURE SECTION - Exact Figma Match
+   ============================================ */
+function VideoFeatureSection() {
+  const features = [
+    "Complete patient management solution",
+    "Real-time appointment scheduling",
+    "Comprehensive health analytics",
+    "Secure data encryption",
+  ];
+
+  return (
+    <section className="py-[80px] bg-gradient-to-r from-[#155dfc] to-[#1447e6]">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        <div className="flex items-center gap-[80px]">
+          {/* Left Content */}
+          <div className="flex-1 text-white">
+            <h2 className="text-[28px] font-semibold mb-[16px]">
+              Transform How You Practice Medicine
+            </h2>
+            <p className="text-[16px] text-white/80 mb-[32px]">
+              Join thousands of healthcare professionals who've streamlined their practice with AlphaCare.
+            </p>
+
+            <ul className="space-y-[16px]">
+              {features.map((feature, index) => (
+                <li key={index} className="flex items-center gap-[12px]">
+                  <div className="w-[24px] h-[24px] rounded-full bg-white/20 flex items-center justify-center">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <span className="text-[16px]">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Link 
+              href="#demo"
+              className="inline-block mt-[32px] px-[24px] py-[12px] bg-white text-[#155dfc] text-[16px] font-medium rounded-[8px] hover:bg-gray-100 transition-colors"
+            >
+              Watch Demo
+            </Link>
+          </div>
+
+          {/* Right - Video Player Mockup */}
+          <div className="relative w-[500px] h-[320px] bg-[#1447e6] rounded-[20px] flex items-center justify-center overflow-hidden shadow-2xl">
+            {/* Play Button */}
+            <div className="w-[80px] h-[80px] rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-white/30 transition-colors">
+              <div className="w-[60px] h-[60px] rounded-full bg-white flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#155dfc">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Decorative circles */}
+            <div className="absolute top-[-50px] right-[-50px] w-[150px] h-[150px] rounded-full bg-white/10" />
+            <div className="absolute bottom-[-30px] left-[-30px] w-[100px] h-[100px] rounded-full bg-white/10" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   TESTIMONIALS SECTION - Exact Figma Match
+   ============================================ */
+function TestimonialsSection() {
+  const testimonials = [
+    {
+      name: "Dr. Sarah Chen",
+      role: "General Practitioner",
+      quote: "AlphaCare has completely transformed how I manage my practice. The patient management system is incredibly intuitive.",
+      rating: 5,
+    },
+    {
+      name: "Dr. Michael Ross",
+      role: "Cardiologist",
+      quote: "The scheduling system alone has saved us hours each week. Our patients love the automated reminders.",
+      rating: 5,
+    },
+    {
+      name: "Dr. Emily Parker",
+      role: "Pediatrician",
+      quote: "Finally, a system that actually understands what doctors need. The analytics dashboard is a game-changer.",
+      rating: 5,
+    },
+  ];
+
+  return (
+    <section className="py-[80px] bg-white">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        {/* Section Header */}
+        <div className="text-center mb-[60px]">
+          <h2 className="text-[28px] font-semibold text-[#101828] mb-[12px]">
+            What Doctors Are Saying About Us
+          </h2>
+          <p className="text-[16px] text-[#4a5565]">
+            Hear from healthcare professionals who've transformed their practice
+          </p>
+        </div>
+
+        {/* Testimonials Grid */}
+        <div className="grid grid-cols-3 gap-[24px]">
+          {testimonials.map((testimonial, index) => (
+            <div 
+              key={index} 
+              className="bg-[#f9fafb] rounded-[16px] p-[32px]"
+            >
+              {/* Rating Stars */}
+              <div className="flex gap-[4px] mb-[16px]">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#FFC107">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ))}
+              </div>
+
+              {/* Quote */}
+              <p className="text-[14px] text-[#4a5565] mb-[24px] leading-[1.6]">
+                &quot;{testimonial.quote}&quot;
+              </p>
+
+              {/* Author */}
+              <div className="flex items-center gap-[12px]">
+                <div className="w-[40px] h-[40px] rounded-full bg-gradient-to-br from-[#155dfc] to-[#1447e6] flex items-center justify-center">
+                  <span className="text-[14px] font-semibold text-white">
+                    {testimonial.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-[#101828]">{testimonial.name}</p>
+                  <p className="text-[12px] text-[#4a5565]">{testimonial.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   DOCTOR QUOTE SECTION - Exact Figma Match
+   ============================================ */
+function DoctorQuoteSection() {
+  return (
+    <section className="py-[80px] bg-[#f9fafb]">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        <div className="flex items-center gap-[60px]">
+          {/* Left - Doctor Image */}
+          <div className="relative w-[400px] h-[480px] rounded-[20px] overflow-hidden shadow-xl flex-shrink-0">
+            <Image
+              src="/images/doctor/doctor-hero-1.png"
+              alt="Dr. James Wilson"
+              fill
+              className="object-cover"
+            />
+          </div>
+
+          {/* Right - Quote */}
+          <div className="flex-1">
+            <p className="text-[14px] font-medium text-[#155dfc] mb-[16px]">
+              FEATURED TESTIMONIAL
+            </p>
+            <blockquote className="text-[24px] text-[#101828] leading-[1.5] mb-[24px] font-medium">
+              &quot;AlphaCare has completely changed how I run my practice. The comprehensive patient management, combined with the intuitive scheduling system, has allowed me to focus more on what really matters - my patients. I couldn&apos;t imagine going back to the old way of doing things.&quot;
+            </blockquote>
+            <div>
+              <p className="text-[18px] font-semibold text-[#101828]">Dr. James Wilson</p>
+              <p className="text-[14px] text-[#4a5565]">Chief of Medicine, Metropolitan Hospital</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   CTA SECTION - Exact Figma Match
+   ============================================ */
+function CTASection() {
+  return (
+    <section className="py-[80px] bg-gradient-to-r from-[#155dfc] to-[#1447e6]">
+      <div className="max-w-[800px] mx-auto px-[136px] text-center">
+        <h2 className="text-[32px] font-bold text-white mb-[16px]">
+          Ready to Transform Your Practice?
+        </h2>
+        <p className="text-[16px] text-white/80 mb-[32px]">
+          Join thousands of healthcare professionals who've streamlined their practice with AlphaCare.
+        </p>
+
+        <div className="flex justify-center gap-[16px]">
+          <Link
+            href="/doctor/register"
+            className="px-[24px] py-[12px] bg-white text-[#155dfc] text-[16px] font-medium rounded-[8px] hover:bg-gray-100 transition-colors"
+          >
+            Start Free Trial
+          </Link>
+          <Link
+            href="/contact"
+            className="px-[24px] py-[12px] bg-transparent text-white text-[16px] font-medium rounded-[8px] border-2 border-white hover:bg-white/10 transition-colors"
+          >
+            Contact Sales
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================
+   FOOTER - Exact Figma Match
+   ============================================ */
+function Footer() {
+  return (
+    <footer className="bg-[#101828] text-white pt-[60px] pb-[40px]">
+      <div className="max-w-[1488px] mx-auto px-[136px]">
+        <div className="grid grid-cols-4 gap-[48px] mb-[48px]">
+          {/* Logo & Description */}
+          <div className="col-span-1">
+            <div className="flex items-center gap-[8px] mb-[16px]">
+              <div className="w-[28px] h-[28px] rounded-full bg-gradient-to-br from-[#155dfc] to-[#1447e6] flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+              </div>
+              <span className="text-[16px] font-semibold">AlphaCare</span>
+            </div>
+            <p className="text-[14px] text-white/60 leading-[1.6] mb-[20px]">
+              Empowering healthcare professionals with modern practice management solutions.
+            </p>
+            
+            {/* Social Links */}
+            <div className="flex gap-[12px]">
+              <a href="#" className="w-[32px] h-[32px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <Image src="/images/doctor/icon-facebook.svg" alt="Facebook" width={16} height={16} className="invert opacity-60" />
+              </a>
+              <a href="#" className="w-[32px] h-[32px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <Image src="/images/doctor/icon-twitter.svg" alt="Twitter" width={16} height={16} className="invert opacity-60" />
+              </a>
+              <a href="#" className="w-[32px] h-[32px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <Image src="/images/doctor/icon-instagram.svg" alt="Instagram" width={16} height={16} className="invert opacity-60" />
+              </a>
+              <a href="#" className="w-[32px] h-[32px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <Image src="/images/doctor/icon-linkedin.svg" alt="LinkedIn" width={16} height={16} className="invert opacity-60" />
+              </a>
+            </div>
+          </div>
+
+          {/* Product Links */}
+          <div>
+            <h4 className="text-[14px] font-semibold mb-[16px]">Product</h4>
+            <ul className="space-y-[10px]">
+              <li><Link href="#features" className="text-[14px] text-white/60 hover:text-white transition-colors">Features</Link></li>
+              <li><Link href="#pricing" className="text-[14px] text-white/60 hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link href="#integrations" className="text-[14px] text-white/60 hover:text-white transition-colors">Integrations</Link></li>
+              <li><Link href="#updates" className="text-[14px] text-white/60 hover:text-white transition-colors">Updates</Link></li>
+            </ul>
+          </div>
+
+          {/* Company Links */}
+          <div>
+            <h4 className="text-[14px] font-semibold mb-[16px]">Company</h4>
+            <ul className="space-y-[10px]">
+              <li><Link href="/about" className="text-[14px] text-white/60 hover:text-white transition-colors">About Us</Link></li>
+              <li><Link href="/careers" className="text-[14px] text-white/60 hover:text-white transition-colors">Careers</Link></li>
+              <li><Link href="/blog" className="text-[14px] text-white/60 hover:text-white transition-colors">Blog</Link></li>
+              <li><Link href="/press" className="text-[14px] text-white/60 hover:text-white transition-colors">Press</Link></li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-[14px] font-semibold mb-[16px]">Contact</h4>
+            <ul className="space-y-[10px]">
+              <li className="flex items-center gap-[8px]">
+                <Image src="/images/doctor/icon-email.svg" alt="" width={16} height={16} className="invert opacity-60" />
+                <span className="text-[14px] text-white/60">support@alphacare.com</span>
+              </li>
+              <li className="flex items-center gap-[8px]">
+                <Image src="/images/doctor/icon-phone.svg" alt="" width={16} height={16} className="invert opacity-60" />
+                <span className="text-[14px] text-white/60">+1 (555) 123-4567</span>
+              </li>
+              <li className="flex items-center gap-[8px]">
+                <Image src="/images/doctor/icon-location.svg" alt="" width={16} height={16} className="invert opacity-60" />
+                <span className="text-[14px] text-white/60">123 Healthcare Ave, NY 10001</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-white/10 pt-[24px] flex items-center justify-between">
+          <p className="text-[12px] text-white/40">
+            © 2024 AlphaCare. All rights reserved.
+          </p>
+          <div className="flex gap-[24px]">
+            <Link href="/privacy" className="text-[12px] text-white/40 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="text-[12px] text-white/40 hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/cookies" className="text-[12px] text-white/40 hover:text-white transition-colors">Cookie Policy</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
