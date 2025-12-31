@@ -1,0 +1,11 @@
+﻿
+> frontend@0.1.0 build C:\Users\Ashish\Desktop\projects\medmitra\frontend
+> next build
+
+   Γû▓ Next.js 15.5.7
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ┬╖ esmExternals: "loose"
+
+   Creating an optimized production build ...
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

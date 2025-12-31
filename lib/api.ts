@@ -333,12 +333,29 @@ export interface EncounterDataResponse {
       patient: {
         id: string;
         name: string;
+        fullName?: string;
+        full_name?: string;
         uhid: string;
+        dateOfBirth?: string;
+        date_of_birth?: string;
+        gender?: string;
         demographics: {
           age: number;
           gender: string;
           allergies?: string[];
         };
+      };
+      vitals?: {
+        bp?: string;
+        bloodPressure?: string;
+        pulse?: string;
+        heartRate?: string;
+        temp?: string;
+        temperature?: string;
+        weight?: string;
+        height?: string;
+        spo2?: string;
+        spO2?: string;
       };
       medicalHistory: Array<{
         id: string;
@@ -347,14 +364,16 @@ export interface EncounterDataResponse {
         title: string;
         details: string;
       }>;
-      aiAnalysis: {
-        summary: string;
-        recommendations: string[];
-        confidence: number;
-        processingTimeMs: number;
+      aiAnalysis?: {
+        summary?: string;
+        suggestions?: string[];
+        recommendations?: string[];
+        confidence?: number;
+        processingTimeMs?: number;
       };
-      encounterForm: {
+      encounterForm?: {
         chiefComplaint?: string;
+        presentingSymptoms?: string[];
         diagnosis?: Array<{ id: string; name: string }>;
         medications?: Array<{ name: string; dosage: string; frequency: string }>;
       };

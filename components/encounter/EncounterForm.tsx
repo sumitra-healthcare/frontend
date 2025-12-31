@@ -11,8 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { PDFViewer, pdf } from "@react-pdf/renderer";
-import { PrescriptionPDF } from "@/components/prescriptions/PrescriptionPDF";
+import dynamic from "next/dynamic";
+
+const PrescriptionPreview = dynamic(
+  () => import("@/components/encounter/PrescriptionPreview").then((mod) => mod.PrescriptionPreview),
+  { ssr: false }
+);
 import { finalizeEncounter, FinalizeEncounterRequest, createPrescription, CreatePrescriptionRequest, getTemplates, type PrescriptionTemplate, getDoctorProfile } from "@/lib/api";
 
 // Define the unified schema for encounter and prescription
@@ -264,6 +268,8 @@ export default function EncounterForm({ data = {}, encounterId, appointmentId, p
   // Handle PDF download
   const handleDownloadPDF = async () => {
     try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const { PrescriptionPDF } = await import("@/components/prescriptions/PrescriptionPDF");
       const values = form.getValues();
       
       const pdfDoc = (
@@ -646,11 +652,13 @@ export default function EncounterForm({ data = {}, encounterId, appointmentId, p
               </div>
             </div>
             <div className="border rounded-md overflow-hidden" style={{ height: '600px' }}>
-              <PDFViewer width="100%" height="100%" showToolbar>
-                <PrescriptionPDF
-                  patientName={patientInfo.fullName || patientInfo.full_name || 'Patient'}
-                  patientAge={
-                    patientInfo.dateOfBirth || patientInfo.date_of_birth
+              <PrescriptionPreview 
+                  width="100%"
+                  height="100%"
+                  showToolbar
+                  prescriptionData={{
+                    patientName: patientInfo.fullName || patientInfo.full_name || 'Patient',
+                    patientAge: patientInfo.dateOfBirth || patientInfo.date_of_birth
                       ? Math.max(
                           0,
                           Math.floor(
@@ -658,21 +666,20 @@ export default function EncounterForm({ data = {}, encounterId, appointmentId, p
                             (365.25 * 24 * 60 * 60 * 1000)
                           )
                         )
-                      : undefined
-                  }
-                  patientGender={patientInfo.gender}
-                  patientUHID={patientInfo.uhid}
-                  date={new Date().toISOString()}
-                  doctorName={doctorInfo?.name || 'Doctor'}
-                  doctorQualification={doctorInfo?.qualification}
-                  doctorRegistration={doctorInfo?.registration}
-                  medications={form.watch('medications')}
-                  advice={form.watch('advice')}
-                  tests={form.watch('tests')}
-                  followUp={form.watch('followUpInstructions')}
-                  notes={form.watch('notes')}
+                      : undefined,
+                    patientGender: patientInfo.gender,
+                    patientUHID: patientInfo.uhid,
+                    date: new Date().toISOString(),
+                    doctorName: doctorInfo?.name || 'Doctor',
+                    doctorQualification: doctorInfo?.qualification,
+                    doctorRegistration: doctorInfo?.registration,
+                    medications: form.watch('medications'),
+                    advice: form.watch('advice'),
+                    tests: form.watch('tests'),
+                    followUp: form.watch('followUpInstructions'),
+                    notes: form.watch('notes')
+                  }}
                 />
-              </PDFViewer>
             </div>
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-700">

@@ -1,0 +1,66 @@
+﻿node.exe :  ΓÜá Warning: 
+Next.js inferred your 
+workspace root, but it 
+may not be correct.
+At line:1 char:1
++ & "C:\nvm4w\nodejs/node.
+exe" "C:\nvm4w\nodejs/node
+_modules/npm/bin/np ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (   
+  ΓÜá Warning: N...not    
+ be correct.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+ We detected multiple 
+lockfiles and selected 
+the directory of C:\Users\
+Ashish\pnpm-lock.yaml as 
+the root directory.
+ To silence this warning, 
+set 
+`outputFileTracingRoot` 
+in your Next.js config, 
+or consider removing one 
+of the lockfiles if it's 
+not needed.
+   See https://nextjs.org/
+docs/app/api-reference/con
+fig/next-config-js/output#
+caveats for more 
+information.
+ Detected additional 
+lockfiles: 
+   * C:\Users\Ashish\Deskt
+op\projects\medmitra\front
+end\pnpm-lock.yaml
+
+   Γû▓ Next.js 15.5.2
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./app/encounter/[id]/page.
+tsx
+Module not found: ESM 
+packages 
+(@react-pdf/renderer) 
+need to be imported. Use 
+'import' to reference the 
+package instead. https://n
+extjs.org/docs/messages/im
+port-esm-externals
+
+https://nextjs.org/docs/me
+ssages/module-not-found
+
+
+> Build failed because of 
+webpack errors
