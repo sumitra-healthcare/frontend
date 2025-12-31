@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { AlphaCareHeader, AlphaCareFooter } from "@/components/shared";
 
 /**
  * About Page - Exact Figma Implementation
@@ -17,8 +18,8 @@ import Image from "next/image";
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <Navigation />
+      {/* Shared Navigation */}
+      <AlphaCareHeader activePage="about" variant="public" />
 
       {/* Hero Section */}
       <HeroSection />
@@ -38,80 +39,9 @@ export default function AboutPage() {
       {/* CTA Section */}
       <CTASection />
 
-      {/* Footer */}
-      <Footer />
+      {/* Shared Footer */}
+      <AlphaCareFooter />
     </div>
-  );
-}
-
-/* ============================================
-   NAVIGATION
-   ============================================ */
-function Navigation() {
-  const [servicesOpen, setServicesOpen] = React.useState(false);
-
-  return (
-    <nav className="absolute top-[40px] left-[80px] right-[80px] z-50">
-      <div className="bg-[#E6F6FE] rounded-[10px] px-[40px] py-[20px] flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-[10px]">
-          <div className="w-[40px] h-[40px] rounded-lg bg-gradient-to-br from-[#1376F8] to-[#25B4F8] flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
-          <span className="text-[28px] font-bold">
-            <span className="text-[#1376F8]">Alpha</span>
-            <span className="text-[#25B4F8]">Care</span>
-          </span>
-        </Link>
-
-        {/* Nav Links */}
-        <div className="flex items-center gap-[40px]">
-          <Link href="/" className="text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors">
-            Home
-          </Link>
-          
-          <div className="relative">
-            <button
-              onClick={() => setServicesOpen(!servicesOpen)}
-              className="flex items-center gap-[8px] text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors"
-            >
-              Services
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                className={`transition-transform ${servicesOpen ? 'rotate-180' : ''}`}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-
-            {servicesOpen && (
-              <div className="absolute top-full left-0 mt-[8px] w-[140px] bg-white rounded-[10px] shadow-xl border border-gray-100 py-[8px]">
-                <Link href="/doctor" className="block px-[16px] py-[10px] text-[14px] text-[#1376F8] hover:bg-[#E6F6FE] font-medium"
-                  onClick={() => setServicesOpen(false)}>Doctor</Link>
-                <Link href="/patient" className="block px-[16px] py-[10px] text-[14px] text-[#EC942C] hover:bg-[#E6F6FE] font-medium"
-                  onClick={() => setServicesOpen(false)}>Patient</Link>
-                <Link href="/coordinator" className="block px-[16px] py-[10px] text-[14px] text-[#34C759] hover:bg-[#E6F6FE] font-medium"
-                  onClick={() => setServicesOpen(false)}>Coordinator</Link>
-              </div>
-            )}
-          </div>
-
-          <Link href="/about" className="text-[16px] font-medium text-[#011632] hover:text-[#1376F8] transition-colors">
-            About
-          </Link>
-        </div>
-
-        {/* Auth Buttons */}
-        <div className="flex items-center gap-[24px]">
-          <Link href="/login" className="text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors">
-            Login
-          </Link>
-          <Link href="/register" className="px-[28px] py-[12px] bg-[#1376F8] text-white text-[16px] font-medium rounded-[8px] hover:bg-[#0d5bc7] transition-colors shadow-md">
-            Sign up
-          </Link>
-        </div>
-      </div>
-    </nav>
   );
 }
 
@@ -297,21 +227,21 @@ function TeamSection() {
       role: "Alphacare Founder", 
       subtitle: "Internal Medicine & Healthcare Innovation",
       image: "/images/about/team-1.png",
-      borderColor: "from-[#FFD700] via-[#FFA500] to-[#9B59B6]" // Yellow to purple gradient
+      borderColor: "from-[#FFD700] via-[#FFA500] to-[#9B59B6]"
     },
     { 
       name: "Gaurangi Jain", 
       role: "UX/UI Designer", 
       subtitle: "Internal Medicine & Healthcare Innovation",
       image: "/images/about/team-2.png",
-      borderColor: "from-[#4A90E2] via-[#5B9FE3] to-[#6BB3F4]" // Blue gradient
+      borderColor: "from-[#4A90E2] via-[#5B9FE3] to-[#6BB3F4]"
     },
     { 
       name: "Deepika Saini", 
       role: "UX/UI Designer", 
       subtitle: "Internal Medicine & Healthcare Innovation",
       image: "/images/about/team-3.png",
-      borderColor: "from-[#4A90E2] via-[#5B9FE3] to-[#6BB3F4]" // Blue gradient
+      borderColor: "from-[#4A90E2] via-[#5B9FE3] to-[#6BB3F4]"
     },
   ];
 
@@ -451,70 +381,5 @@ function CTASection() {
         </div>
       </div>
     </section>
-  );
-}
-
-/* ============================================
-   FOOTER
-   ============================================ */
-function Footer() {
-  return (
-    <footer className="bg-[#011632] text-white pt-[80px] pb-[40px]">
-      <div className="max-w-[1440px] mx-auto px-[140px]">
-        <div className="grid grid-cols-4 gap-[60px] mb-[60px]">
-          {/* Logo & Description */}
-          <div>
-            <div className="flex items-center gap-[10px] mb-[20px]">
-              <div className="w-[40px] h-[40px] rounded-lg bg-gradient-to-br from-[#1376F8] to-[#25B4F8] flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                </svg>
-              </div>
-              <span className="text-[24px] font-bold">
-                <span className="text-white">Alpha</span>
-                <span className="text-[#25B4F8]">Care</span>
-              </span>
-            </div>
-            <p className="text-[14px] text-white/70 leading-[1.6]">
-              Your trusted partner in digital healthcare.
-            </p>
-          </div>
-
-          {/* About Links */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">About</h4>
-            <ul className="space-y-[12px]">
-              <li><Link href="/about" className="text-[14px] text-white/70 hover:text-white">Our Story</Link></li>
-              <li><Link href="/about#team" className="text-[14px] text-white/70 hover:text-white">Team</Link></li>
-              <li><Link href="/careers" className="text-[14px] text-white/70 hover:text-white">Careers</Link></li>
-            </ul>
-          </div>
-
-          {/* Services Links */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">Services</h4>
-            <ul className="space-y-[12px]">
-              <li><Link href="/patient" className="text-[14px] text-white/70 hover:text-white">For Patients</Link></li>
-              <li><Link href="/doctor" className="text-[14px] text-white/70 hover:text-white">For Doctors</Link></li>
-              <li><Link href="/coordinator" className="text-[14px] text-white/70 hover:text-white">For Coordinators</Link></li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">Contact</h4>
-            <ul className="space-y-[12px]">
-              <li><Link href="/help" className="text-[14px] text-white/70 hover:text-white">Help Center</Link></li>
-              <li><Link href="/contact" className="text-[14px] text-white/70 hover:text-white">Contact Us</Link></li>
-              <li><Link href="/privacy" className="text-[14px] text-white/70 hover:text-white">Privacy Policy</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-white/20 pt-[24px] text-center">
-          <p className="text-[14px] text-white/50">© 2024 Alpha Care. All rights reserved.</p>
-        </div>
-      </div>
-    </footer>
   );
 }

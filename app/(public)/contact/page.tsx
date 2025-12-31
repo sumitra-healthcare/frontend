@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { AlphaCareHeader, AlphaCareFooter } from '@/components/shared';
 
 /**
  * Contact Page - Exact Figma Design Match (node 130-1847)
@@ -38,8 +38,8 @@ export default function ContactPage() {
 
   return (
     <div className="relative w-full min-h-screen bg-white overflow-x-hidden">
-      {/* Navigation */}
-      <Navigation />
+      {/* Shared Navigation */}
+      <AlphaCareHeader activePage="contact" variant="public" />
 
       {/* Main Content */}
       <main className="pt-[140px] pb-[80px]">
@@ -252,8 +252,8 @@ export default function ContactPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Shared Footer */}
+      <AlphaCareFooter showSocialIcons={true} />
     </div>
   );
 }
@@ -280,167 +280,5 @@ function ContactInfoCard({ icon, title, lines }: ContactInfoCardProps) {
         ))}
       </div>
     </div>
-  );
-}
-
-/* ============================================
-   NAVIGATION
-   ============================================ */
-function Navigation() {
-  const [servicesOpen, setServicesOpen] = React.useState(false);
-
-  return (
-    <nav className="absolute top-[40px] left-[80px] right-[80px] z-50">
-      <div className="bg-[#E6F6FE] rounded-[10px] px-[40px] py-[20px] flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-[10px]">
-          <div className="w-[40px] h-[40px] rounded-lg bg-gradient-to-br from-[#1376F8] to-[#25B4F8] flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
-          <span className="text-[28px] font-bold">
-            <span className="text-[#1376F8]">Alpha</span>
-            <span className="text-[#25B4F8]">Care</span>
-          </span>
-        </Link>
-
-        {/* Nav Links */}
-        <div className="flex items-center gap-[40px]">
-          <Link href="/" className="text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors">
-            Home
-          </Link>
-          
-          {/* Services Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setServicesOpen(!servicesOpen)}
-              className="flex items-center gap-[8px] text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors"
-            >
-              Services
-              <svg 
-                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                className={`transition-transform ${servicesOpen ? 'rotate-180' : ''}`}
-              >
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {servicesOpen && (
-              <div className="absolute top-full left-0 mt-[8px] w-[140px] bg-white rounded-[10px] shadow-xl border border-gray-100 py-[8px]">
-                <Link href="/doctor" className="block px-[16px] py-[10px] text-[14px] text-[#1376F8] hover:bg-[#E6F6FE] font-medium" onClick={() => setServicesOpen(false)}>Doctor</Link>
-                <Link href="/patient" className="block px-[16px] py-[10px] text-[14px] text-[#EC942C] hover:bg-[#E6F6FE] font-medium" onClick={() => setServicesOpen(false)}>Patient</Link>
-                <Link href="/coordinator" className="block px-[16px] py-[10px] text-[14px] text-[#34C759] hover:bg-[#E6F6FE] font-medium" onClick={() => setServicesOpen(false)}>Coordinator</Link>
-              </div>
-            )}
-          </div>
-
-          <Link href="/about" className="text-[16px] text-[#3C4959] hover:text-[#1376F8] transition-colors">About</Link>
-          <Link href="/contact" className="text-[16px] font-medium text-[#011632] hover:text-[#1376F8] transition-colors">Contact</Link>
-        </div>
-
-        {/* Contact Button */}
-        <Link 
-          href="/contact" 
-          className="px-[28px] py-[12px] bg-[#1376F8] text-white text-[16px] font-medium rounded-[8px] hover:bg-[#0d5bc7] transition-colors shadow-md"
-        >
-          Contact Us
-        </Link>
-      </div>
-    </nav>
-  );
-}
-
-/* ============================================
-   FOOTER - Matching Figma Design
-   ============================================ */
-function Footer() {
-  return (
-    <footer className="bg-[#011632] text-white pt-[60px] pb-[40px]">
-      <div className="max-w-[1200px] mx-auto px-[40px]">
-        <div className="grid grid-cols-4 gap-[60px] mb-[40px]">
-          {/* Left Column - Description & Social */}
-          <div className="col-span-1">
-            <p className="text-[14px] text-white/70 leading-[1.7] mb-[24px]">
-              Comprehensive healthcare management platform for doctors, patients, and coordinators.
-            </p>
-            {/* Social Icons */}
-            <div className="flex items-center gap-[12px]">
-              <a href="#" className="w-[36px] h-[36px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                </svg>
-              </a>
-              <a href="#" className="w-[36px] h-[36px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/>
-                </svg>
-              </a>
-              <a href="#" className="w-[36px] h-[36px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#011632"/>
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#011632" strokeWidth="2"/>
-                </svg>
-              </a>
-              <a href="#" className="w-[36px] h-[36px] rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                  <rect x="2" y="9" width="4" height="12"/>
-                  <circle cx="4" cy="4" r="2"/>
-                </svg>
-              </a>
-            </div>
-          </div>
-
-          {/* Product Links */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">Product</h4>
-            <ul className="space-y-[12px]">
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">Features</Link></li>
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">Pricing</Link></li>
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">Security</Link></li>
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">Integrations</Link></li>
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">API</Link></li>
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">Company</h4>
-            <ul className="space-y-[12px]">
-              <li><Link href="/about" className="text-[14px] text-white/70 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link href="#" className="text-[14px] text-white/70 hover:text-white transition-colors">Careers</Link></li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-[16px] font-semibold mb-[20px]">Contact</h4>
-            <ul className="space-y-[12px]">
-              <li className="flex items-center gap-[8px]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="opacity-70">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-                <span className="text-[14px] text-white/70">support@alphacare.com</span>
-              </li>
-              <li className="flex items-center gap-[8px]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="opacity-70">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
-                <span className="text-[14px] text-white/70">+1 (555) 123-4567</span>
-              </li>
-              <li className="flex items-start gap-[8px]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="opacity-70 mt-[2px]">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <span className="text-[14px] text-white/70">123 Healthcare Ave,<br/>New York, NY 10001</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </footer>
   );
 }
