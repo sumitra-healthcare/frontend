@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Pill, Calendar, User, AlertCircle, Loader2, Activity, FlaskConical } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import dynamic from 'next/dynamic';
 import { getMyPrescriptions, getMyProfile, PatientProfile, type PatientPrescription } from '@/lib/api';
-import { PrescriptionPDF } from '@/components/prescriptions/PrescriptionPDF';
+
+const PrescriptionDownloadButton = dynamic(
+  () => import("@/components/prescriptions/PrescriptionDownloadButton").then((mod) => mod.PrescriptionDownloadButton),
+  { ssr: false }
+);
 
 // Use the shared type from api.ts
 type Prescription = PatientPrescription;
@@ -101,38 +105,21 @@ export default function PatientPrescriptionsWidget() {
                 <p className="text-xs text-gray-500 ml-6">Encounter: {formatDate(prescription.encounterDate)}</p>
               )}
             </div>
-            <PDFDownloadLink
-              document={
-                <PrescriptionPDF
-                  patientName={patientProfile?.fullName || 'Patient'}
-                  patientAge={patientProfile?.dateOfBirth ? calculateAge(patientProfile.dateOfBirth) : undefined}
-                  patientGender={patientProfile?.gender}
-                  patientUHID={patientProfile?.uhid}
-                  date={prescription.date}
-                  doctorName={prescription.doctor.fullName}
-                  medications={prescription.medications}
-                  advice={prescription.advice}
-                  tests={prescription.tests}
-                  followUp={prescription.followUp}
+                <PrescriptionDownloadButton 
+                  fileName={`prescription_${formatDate(prescription.date).replace(/\s/g, '_')}.pdf`}
+                  prescriptionData={{
+                    patientName: patientProfile?.fullName || 'Patient',
+                    patientAge: patientProfile?.dateOfBirth ? calculateAge(patientProfile.dateOfBirth) : undefined,
+                    patientGender: patientProfile?.gender || undefined,
+                    patientUHID: patientProfile?.uhid || undefined,
+                    date: prescription.date,
+                    doctorName: prescription.doctor.fullName,
+                    medications: prescription.medications,
+                    advice: prescription.advice,
+                    tests: prescription.tests,
+                    followUp: prescription.followUp,
+                  }}
                 />
-              }
-              fileName={`prescription_${formatDate(prescription.date).replace(/\s/g, '_')}.pdf`}
-              className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-            >
-              {({ loading }) =>
-                loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Download PDF
-                  </>
-                )
-              }
-            </PDFDownloadLink>
           </div>
 
           <div className="flex items-start gap-2 ml-6">
