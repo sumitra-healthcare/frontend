@@ -1,9 +1,16 @@
 "use client";
 
-import React from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { PrescriptionPDF } from "./PrescriptionPDF";
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+
+const PrescriptionDownloadButton = dynamic(
+  () => import("./PrescriptionDownloadButton").then((mod) => mod.PrescriptionDownloadButton),
+  {
+    ssr: false,
+    loading: () => <Button disabled>Loading PDF...</Button>,
+  }
+);
 import { Download, FileText } from "lucide-react";
 import { Prescription } from "@/lib/api";
 
@@ -57,36 +64,28 @@ export const PrescriptionViewer: React.FC<PrescriptionViewerProps> = ({
           </div>
         </div>
         
-        <PDFDownloadLink
-          document={
-            <PrescriptionPDF
-              patientName={patient?.full_name || "N/A"}
-              patientAge={patient?.date_of_birth ? calculateAge(patient.date_of_birth) : undefined}
-              patientGender={patient?.gender}
-              patientUHID={patient?.uhid}
-              date={prescription.created_at}
-              doctorName={doctorInfo?.name || "Doctor"}
-              doctorQualification={doctorInfo?.qualification}
-              doctorRegistration={doctorInfo?.registration}
-              clinicName={clinicInfo?.name}
-              clinicAddress={clinicInfo?.address}
-              clinicPhone={clinicInfo?.phone}
-              medications={prescription.content.medications}
-              advice={prescription.content.advice}
-              tests={prescription.content.tests}
-              followUp={prescription.content.followUp}
-              notes={prescription.content.notes}
-            />
-          }
+        <PrescriptionDownloadButton 
           fileName={fileName}
-        >
-          {({ loading }) => (
-            <Button disabled={loading}>
-              <Download className="mr-2 h-4 w-4" />
-              {loading ? "Generating..." : "Download PDF"}
-            </Button>
-          )}
-        </PDFDownloadLink>
+          prescriptionData={{
+            patientName: patient?.full_name || "N/A",
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            patientAge: patient?.date_of_birth ? calculateAge(patient.date_of_birth) : undefined,
+            patientGender: patient?.gender,
+            patientUHID: patient?.uhid,
+            date: prescription.created_at,
+            doctorName: doctorInfo?.name || "Doctor",
+            doctorQualification: doctorInfo?.qualification,
+            doctorRegistration: doctorInfo?.registration,
+            clinicName: clinicInfo?.name,
+            clinicAddress: clinicInfo?.address,
+            clinicPhone: clinicInfo?.phone,
+            medications: prescription.content.medications,
+            advice: prescription.content.advice,
+            tests: prescription.content.tests,
+            followUp: prescription.content.followUp,
+            notes: prescription.content.notes,
+          }}
+        />
       </div>
 
       {/* Prescription Summary */}

@@ -7,11 +7,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { getEncounterDetails, finalizeEncounter, FinalizeEncounterRequest, getDoctorProfile } from "@/lib/api";
 import dynamic from "next/dynamic";
-import { PrescriptionPDF } from "@/components/prescriptions/PrescriptionPDF";
 
-// Dynamically import PDFViewer to avoid SSR issues
-const PDFViewer = dynamic(
-  () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
+const PrescriptionPreview = dynamic(
+  () => import("@/components/encounter/PrescriptionPreview").then((mod) => mod.PrescriptionPreview),
   { ssr: false, loading: () => <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div> }
 );
 
@@ -91,7 +89,7 @@ export default function EncounterPage() {
         
         // Set doctor info
         if (doctorResp?.data?.success) {
-          const doc = doctorResp.data.data?.doctor || doctorResp.data.data;
+          const doc = (doctorResp.data.data?.doctor || doctorResp.data.data) as any;
           setDoctorInfo({
             name: doc?.fullName || doc?.full_name || 'Doctor',
             qualification: doc?.qualification || doc?.qualifications,
@@ -660,29 +658,32 @@ export default function EncounterPage() {
 
             {/* PDF Preview */}
             <div className="flex-1 overflow-hidden">
-              <PDFViewer style={{ width: '100%', height: '100%', border: 'none' }}>
-                <PrescriptionPDF
-                  patientName={patient.fullName || patient.full_name || patient.name || 'Patient'}
-                  patientAge={patientAge}
-                  patientGender={patient.gender || patient.demographics?.gender}
-                  patientUHID={patient.uhid}
-                  date={new Date().toISOString()}
-                  doctorName={doctorInfo?.name || 'Doctor'}
-                  doctorQualification={doctorInfo?.qualification}
-                  doctorRegistration={doctorInfo?.registration}
-                  medications={medications.map(m => ({
-                    name: m.name,
-                    dosage: m.dosage,
-                    frequency: m.frequency,
-                    duration: m.duration,
-                    instructions: ''
-                  }))}
-                  advice={additionalNotes}
-                  tests={investigations ? investigations.split('\n').filter(t => t.trim()).map(t => ({ name: t.trim(), instructions: '' })) : []}
-                  followUp={followUp}
-                  notes={chiefComplaint ? `Chief Complaint: ${chiefComplaint}` : ''}
+              <PrescriptionPreview
+                  width="100%"
+                  height="100%"
+                  showToolbar={false}
+                  prescriptionData={{
+                    patientName: patient.fullName || patient.full_name || patient.name || 'Patient',
+                    patientAge: patientAge,
+                    patientGender: patient.gender || patient.demographics?.gender,
+                    patientUHID: patient.uhid,
+                    date: new Date().toISOString(),
+                    doctorName: doctorInfo?.name || 'Doctor',
+                    doctorQualification: doctorInfo?.qualification,
+                    doctorRegistration: doctorInfo?.registration,
+                    medications: medications.map(m => ({
+                      name: m.name,
+                      dosage: m.dosage,
+                      frequency: m.frequency,
+                      duration: m.duration,
+                      instructions: ''
+                    })),
+                    advice: additionalNotes,
+                    tests: investigations ? investigations.split('\n').filter(t => t.trim()).map(t => ({ name: t.trim(), instructions: '' })) : [],
+                    followUp: followUp,
+                    notes: chiefComplaint ? `Chief Complaint: ${chiefComplaint}` : ''
+                  }}
                 />
-              </PDFViewer>
             </div>
 
             {/* Modal Footer */}
