@@ -20,6 +20,7 @@ import {
 import dynamic from "next/dynamic";
 import { PrescriptionPDF } from "@/components/prescriptions/PrescriptionPDF";
 import EncounterPreview from "@/components/doctor/EncounterPreview";
+import { RecommendationSection } from "@/components/doctor/RecommendationSection";
 
 // Dynamically import PDFViewer to avoid SSR issues
 const PDFViewer = dynamic(
@@ -61,6 +62,15 @@ interface EncounterFormDraft {
   investigations: string;
   additionalNotes: string;
   followUp: string;
+  recommendations: {
+    lifestyle: { dos: string[]; donts: string[] };
+    diet: { dos: string[]; donts: string[] };
+    exercises: { dos: string[]; donts: string[] };
+  };
+  alfaSummary?: string | null;
+  alfaEncId?: string | null;
+  chatMessages?: { role: 'user' | 'ai'; text: string }[];
+  isAiPanelExpanded?: boolean;
   savedAt: number; // timestamp
 }
 
@@ -97,6 +107,11 @@ export default function EncounterPage() {
   const [investigations, setInvestigations] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [followUp, setFollowUp] = useState("");
+  const [recommendations, setRecommendations] = useState({
+    lifestyle: { dos: [] as string[], donts: [] as string[] },
+    diet: { dos: [] as string[], donts: [] as string[] },
+    exercises: { dos: [] as string[], donts: [] as string[] }
+  });
 
   // Medication form state
   const [showMedForm, setShowMedForm] = useState(false);
@@ -225,6 +240,11 @@ export default function EncounterPage() {
           if (draft.investigations) setInvestigations(draft.investigations);
           if (draft.additionalNotes) setAdditionalNotes(draft.additionalNotes);
           if (draft.followUp) setFollowUp(draft.followUp);
+          if (draft.recommendations) setRecommendations(draft.recommendations);
+          if (draft.alfaSummary) setAlfaSummary(draft.alfaSummary);
+          if (draft.alfaEncId) setAlfaEncId(draft.alfaEncId);
+          if (draft.chatMessages) setChatMessages(draft.chatMessages);
+          if (draft.isAiPanelExpanded) setIsAiPanelExpanded(draft.isAiPanelExpanded);
         }
       }
     } catch (err) {
@@ -256,6 +276,11 @@ export default function EncounterPage() {
           investigations,
           additionalNotes,
           followUp,
+          recommendations,
+          alfaSummary,
+          alfaEncId,
+          chatMessages,
+          isAiPanelExpanded,
           savedAt: Date.now(),
         };
         localStorage.setItem(getStorageKey(id), JSON.stringify(draft));
@@ -269,7 +294,7 @@ export default function EncounterPage() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [id, loading, healthHistory, vitals, chiefComplaint, symptoms, diagnoses, medications, investigations, additionalNotes, followUp]);
+  }, [id, loading, healthHistory, vitals, chiefComplaint, symptoms, diagnoses, medications, investigations, additionalNotes, followUp, recommendations, alfaSummary, alfaEncId, chatMessages, isAiPanelExpanded]);
 
   // Handlers
   const addSymptom = () => {
@@ -345,7 +370,8 @@ export default function EncounterPage() {
           oxygenSaturation: vitals.spo2 || ""
         },
         doctorRemarks: additionalNotes,
-        followUpInstructions: followUp
+        followUpInstructions: followUp,
+        recommendations: recommendations
       };
 
       await finalizeEncounter(bundle.encounter.id, data);
@@ -376,6 +402,13 @@ export default function EncounterPage() {
 
   // Alfa AI - Invoke Encounter Assessment
   const handleAlfaInvoke = async () => {
+    // If AI analysis already exists, just show the panel
+    if (alfaEncId || alfaSummary) {
+      setIsAiPanelExpanded(true);
+      toast.info("Showing existing AI analysis.");
+      return;
+    }
+
     if (!chiefComplaint.trim()) {
       toast.error("Please enter a chief complaint first.");
       return;
@@ -399,12 +432,12 @@ export default function EncounterPage() {
         enc_id: id,
         complaint: complaintText,
         vitals: {
-          bp: vitals.bloodPressure || null,
-          hr: vitals.heartRate || null,
-          temp: vitals.temperature || null,
+          bp: vitals.bp || null,
+          hr: vitals.pulse || (vitals.heartRate as string) || null,
+          temp: vitals.temp || (vitals.temperature as string) || null,
           weight: vitals.weight || null,
           height: vitals.height || null,
-          spo2: vitals.spO2 || null,
+          spo2: vitals.spo2 || (vitals.spO2 as string) || null,
         },
       });
 
@@ -435,19 +468,13 @@ export default function EncounterPage() {
           setInvestigations(data.tests.map(t => `${t.name}${t.reason ? ` - ${t.reason}` : ''}`).join('\n'));
         }
         
-        // Prefill Additional Notes from recommendations
-        const recommendations = [];
-        if (data.recommendations?.lifestyle?.length) {
-          recommendations.push(`Lifestyle: ${data.recommendations.lifestyle.join(', ')}`);
-        }
-        if (data.recommendations?.diet?.length) {
-          recommendations.push(`Diet: ${data.recommendations.diet.join(', ')}`);
-        }
-        if (data.recommendations?.exercises?.length) {
-          recommendations.push(`Exercises: ${data.recommendations.exercises.join(', ')}`);
-        }
-        if (recommendations.length) {
-          setAdditionalNotes(recommendations.join('\n'));
+        // Populate Recommendations State
+        if (data.recommendations) {
+          setRecommendations({
+            lifestyle: data.recommendations.lifestyle || { dos: [], donts: [] },
+            diet: data.recommendations.diet || { dos: [], donts: [] },
+            exercises: data.recommendations.exercises || { dos: [], donts: [] }
+          });
         }
 
         // Expand AI panels after successful invocation
@@ -597,14 +624,8 @@ export default function EncounterPage() {
               age: patientAge,
               gender: patient.gender
             }}
-            vitals={{
-              bp: vitals.bp || '',
-              heartRate: vitals.pulse || '',
-              temperature: vitals.temp || '',
-              weight: vitals.weight || '',
-              height: vitals.height || '',
-              spO2: vitals.spo2 || ''
-            }}
+            vitals={vitals}
+            enabledVitals={enabledVitals}
             clinicalNotes={{
               chiefComplaint,
               historyPresentIllness: healthHistory, // Using health history as HPI for now, or combine
@@ -886,6 +907,27 @@ export default function EncounterPage() {
             />
           </div>
 
+
+          {/* Recommendations Sections */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900 ml-1">Recommendations</h3>
+            <RecommendationSection
+              label="Lifestyle"
+              value={recommendations.lifestyle}
+              onChange={(val) => setRecommendations({ ...recommendations, lifestyle: val })}
+            />
+            <RecommendationSection
+              label="Diet"
+              value={recommendations.diet}
+              onChange={(val) => setRecommendations({ ...recommendations, diet: val })}
+            />
+            <RecommendationSection
+              label="Exercises"
+              value={recommendations.exercises}
+              onChange={(val) => setRecommendations({ ...recommendations, exercises: val })}
+            />
+          </div>
+
           {/* Follow Up */}
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Follow Up</h3>
@@ -920,39 +962,16 @@ export default function EncounterPage() {
                       <p className="font-medium text-gray-800 mb-1">Diagnosis</p>
                       <p>{alfaSummary}</p>
                     </div>
-                    {alfaRecommendations && (
-                      <div className="space-y-2">
-                        {alfaRecommendations.lifestyle?.length > 0 && (
-                          <div className="p-2 bg-green-50 rounded-lg">
-                            <p className="font-medium text-green-800 text-xs mb-1">Lifestyle</p>
-                            <ul className="text-xs space-y-0.5">
-                              {alfaRecommendations.lifestyle.map((r, i) => (
-                                <li key={i}>• {r}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {alfaRecommendations.diet?.length > 0 && (
-                          <div className="p-2 bg-orange-50 rounded-lg">
-                            <p className="font-medium text-orange-800 text-xs mb-1">Diet</p>
-                            <ul className="text-xs space-y-0.5">
-                              {alfaRecommendations.diet.map((r, i) => (
-                                <li key={i}>• {r}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {alfaRecommendations.exercises?.length > 0 && (
-                          <div className="p-2 bg-blue-50 rounded-lg">
-                            <p className="font-medium text-blue-800 text-xs mb-1">Exercises</p>
-                            <ul className="text-xs space-y-0.5">
-                              {alfaRecommendations.exercises.map((r, i) => (
-                                <li key={i}>• {r}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
+                    {/* Recommendations Preview in AI Summary */}
+                    {/* Simplified view since we have full editors now */}
+                    {(
+                      recommendations.lifestyle.dos.length > 0 || 
+                      recommendations.diet.dos.length > 0 || 
+                      recommendations.exercises.dos.length > 0
+                    ) && (
+                       <div className="mt-2 text-xs text-gray-500 italic">
+                         Recommendations populated in the main form.
+                       </div>
                     )}
                   </div>
                 ) : bundle?.aiAnalysis ? (

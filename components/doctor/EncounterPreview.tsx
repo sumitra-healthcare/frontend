@@ -12,6 +12,12 @@ interface Medication {
   instructions?: string;
 }
 
+interface VitalDefinition {
+  key: string;
+  label: string;
+  unit?: string;
+}
+
 interface EncounterPreviewProps {
   patient: {
     name: string;
@@ -19,14 +25,9 @@ interface EncounterPreviewProps {
     age?: number;
     gender?: string | null;
   };
-  vitals?: {
-    bp?: string | number;
-    heartRate?: string | number;
-    temperature?: string | number;
-    weight?: string | number;
-    height?: string | number;
-    spO2?: string | number;
-  };
+  vitals?: Record<string, string | number>;
+  vitalDefinitions?: VitalDefinition[];
+  enabledVitals?: VitalDefinition[]; // Or string keys if preferred, but definitions are easier
   clinicalNotes: {
     chiefComplaint: string;
     historyPresentIllness: string;
@@ -39,13 +40,19 @@ interface EncounterPreviewProps {
 export default function EncounterPreview({
   patient,
   vitals,
+  vitalDefinitions = [],
+  enabledVitals = [],
   clinicalNotes,
   medications,
 }: EncounterPreviewProps) {
-  // Helper to split diagnosis string into badges (assumes comma separated or just displays)
+  // Helper to split diagnosis string into badges
   const diagnosisList = clinicalNotes.diagnosis
     ? clinicalNotes.diagnosis.split(",").map((d) => d.trim()).filter(Boolean)
     : [];
+
+  // Filter definitions based on enabledVitals (if provided) or show all passed definitions
+  // If enabledVitals is passed, we use that list directly
+  const vitalsToShow = enabledVitals.length > 0 ? enabledVitals : vitalDefinitions;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -91,33 +98,19 @@ export default function EncounterPreview({
            </div>
         </CardHeader>
         <CardContent className="pt-6">
-          {vitals ? (
+          {vitals && vitalsToShow.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-              <div className="space-y-1">
-                <span className="text-sm text-gray-500">Blood Pressure</span>
-                <p className="text-xl font-semibold text-gray-900">{vitals.bp || "--"}</p>
-                <span className="text-xs text-gray-400">mmHg</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-sm text-gray-500">Heart Rate</span>
-                <p className="text-xl font-semibold text-gray-900">{vitals.heartRate || "--"}</p>
-                <span className="text-xs text-gray-400">bpm</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-sm text-gray-500">Temperature</span>
-                <p className="text-xl font-semibold text-gray-900">{vitals.temperature || "--"}</p>
-                <span className="text-xs text-gray-400">°F</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-sm text-gray-500">Weight</span>
-                <p className="text-xl font-semibold text-gray-900">{vitals.weight || "--"}</p>
-                <span className="text-xs text-gray-400">kg</span>
-              </div>
-               <div className="space-y-1">
-                <span className="text-sm text-gray-500">Height</span>
-                <p className="text-xl font-semibold text-gray-900">{vitals.height || "--"}</p>
-                <span className="text-xs text-gray-400">cm</span>
-              </div>
+              {vitalsToShow.map((def) => (
+                <div key={def.key} className="space-y-1">
+                  <span className="text-sm text-gray-500">{def.label}</span>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {vitals[def.key] || "--"}
+                  </p>
+                  {def.unit && (
+                    <span className="text-xs text-gray-400">{def.unit}</span>
+                  )}
+                </div>
+              ))}
             </div>
           ) : (
             <p className="text-gray-500 italic">No vitals recorded.</p>

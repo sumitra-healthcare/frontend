@@ -602,6 +602,7 @@ export interface VitalDefinition {
   display_order: number;
   is_active: boolean;
   isEnabled?: boolean;      // Only present in config responses
+  label?: string;           // Optional label for UI display
 }
 
 export interface GetVitalsDefinitionsResponse {
@@ -1032,6 +1033,11 @@ export interface FinalizeEncounterRequest {
   };
   doctorRemarks: string;
   followUpInstructions: string;
+  recommendations: {
+    lifestyle: { dos: string[]; donts: string[] };
+    diet: { dos: string[]; donts: string[] };
+    exercises: { dos: string[]; donts: string[] };
+  };
 }
 
 export interface FinalizeEncounterResponse {
@@ -2430,9 +2436,9 @@ export interface AlfaTest {
 }
 
 export interface AlfaRecommendations {
-  lifestyle: string[];
-  diet: string[];
-  exercises: string[];
+  lifestyle: { dos: string[]; donts: string[] };
+  diet: { dos: string[]; donts: string[] };
+  exercises: { dos: string[]; donts: string[] };
 }
 
 export interface AlfaEncounterResponse {
