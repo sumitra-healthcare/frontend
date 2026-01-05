@@ -1,5 +1,6 @@
 import axios, { AxiosResponse, AxiosError } from "axios";
 import type { Coordinator } from "./types";
+import https from "https";
 
 // Interfaces for Doctor API
 export interface DoctorRegistrationRequest {
@@ -370,6 +371,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:300
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Important for refresh token cookies
+  httpsAgent: new https.Agent({ keepAlive: true , rejectUnauthorized: false}),
   headers: {
     "Content-Type": "application/json",
   },
@@ -2408,6 +2410,7 @@ const alfaApiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  httpsAgent: new https.Agent({ keepAlive: true, rejectUnauthorized: false })
 });
 
 // --- Alfa AI Types ---
