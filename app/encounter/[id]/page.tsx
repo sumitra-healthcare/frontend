@@ -482,12 +482,8 @@ export default function EncounterPage() {
 
   // Alfa AI - Invoke Encounter Assessment
   const handleAlfaInvoke = async () => {
-    // If AI analysis already exists, just show the panel
-    if (alfaEncId || alfaSummary) {
-      setIsAiPanelExpanded(true);
-      toast.info("Showing existing AI analysis.");
-      return;
-    }
+    // Always expand the AI panel when invoking
+    setIsAiPanelExpanded(true);
 
     if (!chiefComplaint.trim()) {
       toast.error("Please enter a chief complaint first.");
