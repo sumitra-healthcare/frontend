@@ -1042,7 +1042,7 @@ export default function EncounterPage() {
         </div>
 
         {/* Middle Column - Form or Preview */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc] transition-all duration-300">
           {showPreview ? (
             <div className="p-4">
               <button
@@ -1077,7 +1077,7 @@ export default function EncounterPage() {
             </div>
           ) : (
             <div className="p-4">
-              <div className="max-w-3xl mx-auto space-y-4 pb-20">
+              <div className="w-full px-4 space-y-4 pb-20">
                 {/* Dynamic sections based on saved order */}
                 {sectionOrder.map((sectionId) => renderSection(sectionId))}
 
