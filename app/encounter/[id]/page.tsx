@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Check, X, Plus, Loader2, Sparkles, Send, Heart, Activity, Thermometer, Scale, Ruler, Wind, LucideIcon, MessageSquare } from "lucide-react";
+import { ArrowLeft, Eye, Check, X, Plus, Loader2, Sparkles, Send, Heart, Activity, Thermometer, Scale, Ruler, Wind, LucideIcon, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { 
@@ -160,6 +160,7 @@ export default function EncounterPage() {
   const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
   const [isAiChatCollapsed, setIsAiChatCollapsed] = useState(false);
   const [isAiPanelExpanded, setIsAiPanelExpanded] = useState(false); // Controls panel visibility
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false); // Controls left panel collapse
 
   // Section ordering from doctor preferences
   const [sectionOrder, setSectionOrder] = useState<string[]>(['vitals', 'symptoms', 'diagnosis', 'medications', 'notes']);
@@ -638,33 +639,42 @@ export default function EncounterPage() {
         return (
           <div key="vitals" className="bg-white rounded-xl p-4 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Vitals</h3>
-            {enabledVitals.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {enabledVitals.map((vital) => {
-                  const IconComponent = iconMap[vital.icon || 'activity'] || Activity;
-                  return (
-                    <div key={vital.key} className="flex items-center gap-2">
-                      <IconComponent className={`w-4 h-4 ${vital.color || 'text-gray-400'}`} />
-                      <input
-                        type="text"
-                        value={vitals[vital.key] || ''}
-                        onChange={(e) => setVitals({ ...vitals, [vital.key]: e.target.value })}
-                        placeholder={vital.name}
-                        disabled={isFinalized}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <input type="text" value={vitals.bp || ''} onChange={(e) => setVitals({ ...vitals, bp: e.target.value })} placeholder="Blood Pressure" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.pulse || ''} onChange={(e) => setVitals({ ...vitals, pulse: e.target.value })} placeholder="Heart Rate" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.temp || ''} onChange={(e) => setVitals({ ...vitals, temp: e.target.value })} placeholder="Temperature" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.weight || ''} onChange={(e) => setVitals({ ...vitals, weight: e.target.value })} placeholder="Weight" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-              </div>
-            )}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    {enabledVitals.map((vital) => {
+                      const IconComponent = iconMap[vital.icon || 'activity'] || Activity;
+                      return (
+                        <th key={vital.key} className="px-3 py-2 text-left first:rounded-tl-lg last:rounded-tr-lg">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                            <IconComponent className={`w-3.5 h-3.5 ${vital.color || 'text-blue-500'}`} />
+                            <span>{vital.name}</span>
+                            {vital.unit && <span className="text-gray-400 font-normal">({vital.unit})</span>}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t border-gray-100">
+                    {enabledVitals.map((vital) => (
+                      <td key={vital.key} className="px-2 py-2">
+                        <input
+                          type="text"
+                          value={vitals[vital.key] || ''}
+                          onChange={(e) => setVitals({ ...vitals, [vital.key]: e.target.value })}
+                          disabled={isFinalized}
+                          placeholder="—"
+                          className="w-full min-w-[80px] px-3 py-2 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 hover:border-blue-300 transition-colors"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         );
       case 'symptoms':
@@ -975,34 +985,60 @@ export default function EncounterPage() {
       {/* Main Content */}
       <div className="flex h-[calc(100vh-70px)]">
         {/* Left Column - Health History */}
-        <div className="w-64 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto p-4 custom-scrollbar">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-gray-700 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-blue-600" />
-              History
-            </h2>
-          </div>
-          
-          <Collapsible open={!isHistoryCollapsed} onOpenChange={(open) => setIsHistoryCollapsed(!open)}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-gray-50 rounded-lg group">
-              <span className="text-sm font-medium text-gray-600">Medical History</span>
-              <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-2 space-y-4">
-                {bundle?.medicalHistory?.map((entry: any, i: number) => (
-                  <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="text-xs text-gray-500 mb-1">{entry.date}</div>
-                    <div className="font-medium text-gray-800 text-sm mb-1">{entry.doctor}</div>
-                    <p className="text-sm text-gray-600">{entry.diagnosis}</p>
-                  </div>
-                ))}
-                {(!bundle?.medicalHistory || bundle.medicalHistory.length === 0) && (
-                  <div className="text-sm text-gray-400 italic p-2">No history available</div>
-                )}
+        <div className={`flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${isLeftPanelCollapsed ? 'w-12' : 'w-64'}`}>
+          {/* Collapsed State */}
+          {isLeftPanelCollapsed ? (
+            <div className="flex flex-col items-center py-4 h-full">
+              <button
+                onClick={() => setIsLeftPanelCollapsed(false)}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Expand History Panel"
+              >
+                <ChevronRight className="w-5 h-5 text-blue-600" />
+              </button>
+              <span className="text-xs text-blue-600 mt-2 font-medium" style={{ writingMode: 'vertical-rl' }}>
+                History
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                  History
+                </h2>
+                <button
+                  onClick={() => setIsLeftPanelCollapsed(true)}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Collapse"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                </button>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <Collapsible open={!isHistoryCollapsed} onOpenChange={(open) => setIsHistoryCollapsed(!open)}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-gray-50 rounded-lg group">
+                    <span className="text-sm font-medium text-gray-600">Medical History</span>
+                    <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2 space-y-4">
+                      {bundle?.medicalHistory?.map((entry: any, i: number) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">{entry.date}</div>
+                          <div className="font-medium text-gray-800 text-sm mb-1">{entry.doctor}</div>
+                          <p className="text-sm text-gray-600">{entry.diagnosis}</p>
+                        </div>
+                      ))}
+                      {(!bundle?.medicalHistory || bundle.medicalHistory.length === 0) && (
+                        <div className="text-sm text-gray-400 italic p-2">No history available</div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Middle Column - Form or Preview */}
@@ -1086,105 +1122,140 @@ export default function EncounterPage() {
         </div>
 
         {/* Right Column - AI Panel */}
-        {(isAiPanelExpanded || isAlfaLoading) && (
-            <div className="w-80 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto p-4 custom-scrollbar space-y-4">
-              {/* AI Summary */}
-              <Collapsible open={!isAiSummaryCollapsed} onOpenChange={(open) => setIsAiSummaryCollapsed(!open)} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-purple-600" />
-                    AI Summary
-                  </h3>
-                  <CollapsibleTrigger asChild>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <ChevronsUpDown className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <div className="bg-gradient-to-br from-[#e8f0fc] to-[#f0e8fc] rounded-xl p-4 shadow-sm min-h-[200px] text-sm text-gray-700 leading-relaxed border border-purple-100">
-                    {isAlfaLoading ? (
-                      <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-70">
-                        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-                        <p>Analyzing clinical data...</p>
+        {(isAiPanelExpanded || isAlfaLoading || alfaHasBeenInvoked) && (
+          <div className={`flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full transition-all duration-300 ${isAiPanelExpanded ? 'w-96' : 'w-12'}`}>
+            {/* Collapsed State */}
+            {!isAiPanelExpanded && !isAlfaLoading ? (
+              <div className="flex flex-col items-center py-4 h-full">
+                <button
+                  onClick={() => setIsAiPanelExpanded(true)}
+                  className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                  title="Expand AI Panel"
+                >
+                  <ChevronLeft className="w-5 h-5 text-purple-600" />
+                </button>
+                <span className="text-xs text-purple-600 mt-2 font-medium" style={{ writingMode: 'vertical-rl' }}>
+                  AI Assistant
+                </span>
+              </div>
+            ) : (
+              <>
+                {/* AI Summary Section */}
+                <div className="flex-shrink-0 max-h-[50%] flex flex-col bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 border-b-2 border-purple-200">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-purple-100/50 bg-white/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-4 h-4 text-white" />
                       </div>
-                    ) : alfaSummary ? (
-                      <div className="whitespace-pre-wrap">{alfaSummary}</div>
-                    ) : (
-                      <div className="text-center text-gray-500 italic mt-10">
-                        Invoke Alfa AI to generate a clinical summary
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* AI Chat */}
-              <Collapsible open={!isAiChatCollapsed} onOpenChange={(open) => setIsAiChatCollapsed(!open)} className="flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                    Alfa Assistant
-                  </h3>
-                  <CollapsibleTrigger asChild>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <ChevronsUpDown className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <div className="bg-gray-50 rounded-xl border border-gray-200 flex flex-col shadow-sm overflow-hidden min-h-[300px]">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                      {chatMessages.length === 0 && (
-                        <div className="text-center text-gray-400 text-sm mt-10">
-                          Ask questions about the patient's history or potential interactions...
-                        </div>
-                      )}
-                      {chatMessages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
-                            msg.role === 'user' 
-                            ? 'bg-blue-600 text-white rounded-br-none' 
-                            : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
-                          }`}>
-                            {msg.text}
-                          </div>
-                        </div>
-                      ))}
-                      {isChatLoading && (
-                        <div className="flex justify-start">
-                          <div className="bg-gray-100 rounded-2xl rounded-bl-none px-4 py-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3 bg-white border-t border-gray-100">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
-                          placeholder="Ask Alfa..."
-                          disabled={isChatLoading || !alfaEncId}
-                          className="flex-1 px-3 py-2 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
-                        />
-                        <button 
-                          onClick={handleSendChat}
-                          disabled={!chatInput.trim() || isChatLoading || !alfaEncId}
-                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">AI Summary</h3>
+                        <p className="text-[10px] text-purple-500 font-medium">Powered by Alfa</p>
                       </div>
                     </div>
+                    <button
+                      onClick={() => setIsAiPanelExpanded(false)}
+                      className="p-1.5 hover:bg-purple-100 rounded-lg transition-colors"
+                      title="Collapse"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-500" />
+                    </button>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                  <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                {isAlfaLoading ? (
+                  <div className="flex flex-col items-center justify-center py-8 gap-3">
+                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                    </div>
+                    <span className="text-purple-600 text-sm font-medium">Analyzing patient data...</span>
+                  </div>
+                ) : alfaSummary ? (
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-100">
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{alfaSummary}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
+                      <Sparkles className="w-8 h-8 text-purple-400" />
+                    </div>
+                    <p className="text-gray-500 text-sm font-medium">No AI summary yet</p>
+                    <p className="text-gray-400 text-xs mt-1">Click "Invoke Alfa AI" to get suggestions</p>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Chat Section */}
+            <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-blue-100/50 bg-white/50 backdrop-blur-sm">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                  <Send className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Chat with Alfa</h4>
+                  <p className="text-[10px] text-blue-500 font-medium">
+                    {alfaEncId ? 'Online' : 'Invoke AI first to chat'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+                {chatMessages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                      <MessageSquare className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <p className="text-gray-400 text-sm">Ask follow-up questions...</p>
+                  </div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] ${
+                        msg.role === 'user'
+                          ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-sm'
+                          : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
+                      } px-4 py-2.5`}>
+                        <p className="text-sm">{msg.text}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-sm border border-gray-100">
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 bg-white/80 backdrop-blur-sm border-t border-blue-100">
+                <div className="flex gap-2 items-center bg-white rounded-xl border border-gray-200 shadow-sm px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 transition-all">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
+                    placeholder={alfaEncId ? "Type your question..." : "Invoke AI first..."}
+                    disabled={!alfaEncId || isChatLoading}
+                    className="flex-1 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400 disabled:text-gray-400"
+                  />
+                  <button
+                    onClick={handleSendChat}
+                    disabled={!alfaEncId || isChatLoading || !chatInput.trim()}
+                    className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Prescription Preview Modal (Removed) */}
 
