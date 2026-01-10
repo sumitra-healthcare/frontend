@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar, Search, Clock, User, Check, X } from "lucide-react";
+import { Calendar, Search, Clock, User, Check, X, UserPlus, AlertCircle, Phone, CalendarDays, Baby, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { searchPatients, bookDoctorAppointment, PatientListResponse } from "@/lib/api";
+import { searchPatients, bookDoctorAppointment, createPatient, type CreatePatientRequest } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Define Patient type based on API response
 interface Patient {
@@ -18,6 +20,7 @@ interface Patient {
   email?: string;
   gender?: string;
   dateOfBirth?: string;
+  age?: number; // Backend might return age directly, or we calculate from DOB
 }
 
 export default function BookAppointmentPage() {
@@ -29,6 +32,16 @@ export default function BookAppointmentPage() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+
+  // New Patient Form State
+  const [isNewPatientMode, setIsNewPatientMode] = useState(false);
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+  const [newPatientForm, setNewPatientForm] = useState<CreatePatientRequest>({
+    fullName: "",
+    phone: "",
+    gender: "Prefer not to say",
+    dateOfBirth: "",
+  });
 
   // Debounce search
   useEffect(() => {
@@ -57,6 +70,55 @@ export default function BookAppointmentPage() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleCreatePatient = async () => {
+    // Basic validation
+    if (!newPatientForm.fullName || !newPatientForm.phone) {
+      toast.error("Name and Phone number are required");
+      return;
+    }
+
+    setIsCreatingPatient(true);
+    try {
+      const response = await createPatient(newPatientForm);
+      if (response.data.success) {
+        const createdPatient = response.data.data.patient;
+        
+        // Normalize patient object
+        const newPatient: Patient = {
+          id: createdPatient.id || createdPatient._id,
+          fullName: createdPatient.fullName || createdPatient.full_name,
+          uhid: createdPatient.uhid,
+          phoneNumber: createdPatient.phoneNumber || createdPatient.phone,
+          gender: createdPatient.gender,
+          dateOfBirth: createdPatient.dateOfBirth || createdPatient.date_of_birth,
+        };
+
+        toast.success(`Patient ${newPatient.fullName} created successfully`);
+        setSelectedPatient(newPatient);
+        setIsNewPatientMode(false);
+        // Reset form
+        setNewPatientForm({ fullName: "", phone: "", gender: "Prefer not to say", dateOfBirth: "" });
+      }
+    } catch (error: any) {
+      console.error("Create patient failed", error);
+      toast.error(error.response?.data?.message || "Failed to create patient");
+    } finally {
+      setIsCreatingPatient(false);
+    }
+  };
+
+  const calculateAge = (dobString?: string) => {
+    if (!dobString) return "";
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   const handleBookAppointment = async () => {
@@ -125,45 +187,169 @@ export default function BookAppointmentPage() {
             </h2>
             
             {!selectedPatient ? (
-              <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name, UHID, or phone..."
-                    className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-all"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  {isSearching && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+              isNewPatientMode ? (
+                // --- NEW PATIENT FORM ---
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-800">New Patient Details</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setIsNewPatientMode(false)}>
+                      <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Full Name <span className="text-red-500">*</span></Label>
+                      <Input 
+                        placeholder="e.g. John Doe"
+                        value={newPatientForm.fullName}
+                        onChange={(e) => setNewPatientForm({...newPatientForm, fullName: e.target.value})}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-xs">Mobile Number <span className="text-red-500">*</span></Label>
+                      <Input 
+                        placeholder="e.g. 9876543210"
+                        value={newPatientForm.phone}
+                        onChange={(e) => setNewPatientForm({...newPatientForm, phone: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Gender</Label>
+                        <Select 
+                          value={newPatientForm.gender} 
+                          onValueChange={(v) => setNewPatientForm({...newPatientForm, gender: v})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Date of Birth</Label>
+                        <Input 
+                          type="date"
+                          value={newPatientForm.dateOfBirth}
+                          onChange={(e) => setNewPatientForm({...newPatientForm, dateOfBirth: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 mt-2" 
+                    onClick={handleCreatePatient}
+                    disabled={isCreatingPatient}
+                  >
+                    {isCreatingPatient ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</>
+                    ) : (
+                      <>Create & Select Patient</>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                // --- SEARCH MODE ---
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search by name, UHID, or phone..."
+                      className="pl-10 bg-gray-50 border-gray-200 focus:bg-white transition-all"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="border border-gray-100 rounded-lg divide-y divide-gray-100 max-h-60 overflow-y-auto">
+                      {searchResults.map((patient) => (
+                        <div
+                          key={patient.id}
+                          onClick={() => setSelectedPatient(patient)}
+                          className="p-3 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 group-hover:text-blue-700">{patient.fullName}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <span className="flex items-center gap-0.5">
+                                <span className="font-medium">UHID:</span> {patient.uhid}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-0.5">
+                                <Phone className="h-3 w-3" /> {patient.phoneNumber || 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                              <span className="flex items-center gap-0.5">
+                                {patient.gender || 'Unknown'}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-0.5">
+                                {calculateAge(patient.dateOfBirth)} yrs
+                              </span>
+                            </div>
+                          </div>
+                          <User className="h-4 w-4 text-gray-300 group-hover:text-blue-400" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {searchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
+                    <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <p className="text-sm text-gray-500 mb-2">No patients found</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setIsNewPatientMode(true);
+                           // Pre-fill name if user typed a name-like query
+                           if(searchQuery.length > 2 && !/\d/.test(searchQuery)) {
+                             setNewPatientForm(prev => ({ ...prev, fullName: searchQuery }));
+                           }
+                           // Pre-fill phone if user typed digits
+                           if(/^\d+$/.test(searchQuery)) {
+                             setNewPatientForm(prev => ({ ...prev, phone: searchQuery }));
+                           }
+                        }}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Add New Patient
+                      </Button>
+                    </div>
+                  )}
+
+                  {!searchQuery && (
+                    <div className="text-center py-4">
+                      <Button 
+                         variant="ghost" 
+                         className="text-gray-500 hover:text-blue-600"
+                         onClick={() => setIsNewPatientMode(true)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Register New Patient
+                      </Button>
                     </div>
                   )}
                 </div>
-
-                {/* Search Results */}
-                {searchResults.length > 0 && (
-                  <div className="border border-gray-100 rounded-lg divide-y divide-gray-100 max-h-60 overflow-y-auto">
-                    {searchResults.map((patient) => (
-                      <div
-                        key={patient.id}
-                        onClick={() => setSelectedPatient(patient)}
-                        className="p-3 hover:bg-blue-50 cursor-pointer transition-colors flex items-center justify-between group"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900 group-hover:text-blue-700">{patient.fullName}</p>
-                          <p className="text-xs text-gray-500">{patient.uhid} • {patient.phoneNumber || 'No phone'}</p>
-                        </div>
-                        <User className="h-4 w-4 text-gray-300 group-hover:text-blue-400" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {searchQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
-                  <p className="text-sm text-gray-500 text-center py-4">No patients found</p>
-                )}
-              </div>
+              )
             ) : (
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 relative">
                 <button 
@@ -179,7 +365,13 @@ export default function BookAppointmentPage() {
                   <div>
                     <h3 className="font-semibold text-blue-900">{selectedPatient.fullName}</h3>
                     <p className="text-sm text-blue-700">{selectedPatient.uhid}</p>
-                    <p className="text-xs text-blue-600 mt-1">{selectedPatient.phoneNumber}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-blue-600/80">
+                      <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {selectedPatient.phoneNumber}</span>
+                      <span>|</span>
+                      <span>{selectedPatient.gender}</span>
+                      <span>|</span>
+                      <span>{calculateAge(selectedPatient.dateOfBirth)} yrs</span>
+                    </div>
                   </div>
                 </div>
               </div>
