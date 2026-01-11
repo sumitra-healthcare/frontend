@@ -7,7 +7,7 @@ import { Search, Clock, User, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { VitalsStatusBadge, PaymentStatusBadge } from "@/components/doctor/StatusBadge";
-import { getDoctorDashboard, DashboardQueueItem } from "@/lib/api";
+import { getTodaysQueue, DashboardQueueItem } from "@/lib/api";
 import { toast } from "sonner";
 
 // Helper to format date
@@ -77,9 +77,10 @@ export default function OPDQueuePage() {
   const { data: queue = [], isLoading, error } = useQuery({
     queryKey: ['doctor-dashboard-queue'],
     queryFn: async () => {
-      const response = await getDoctorDashboard();
+      // Use getTodaysQueue directly for consistency with dashboard and better error isolation
+      const response = await getTodaysQueue();
       if (response.data.status === "success") {
-        return response.data.data.todaysQueue || [];
+        return response.data.data || []; 
       }
       return [];
     },
