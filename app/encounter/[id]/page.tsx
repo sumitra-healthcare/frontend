@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Check, X, Plus, Loader2, Sparkles, Send, Heart, Activity, Thermometer, Scale, Ruler, Wind, LucideIcon } from "lucide-react";
+import { ArrowLeft, Eye, Check, X, Plus, Loader2, Sparkles, Send, Heart, Activity, Thermometer, Scale, Ruler, Wind, LucideIcon, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { 
@@ -20,6 +20,17 @@ import {
 import dynamic from "next/dynamic";
 import EncounterPreview from "@/components/doctor/EncounterPreview";
 import { RecommendationSection } from "@/components/doctor/RecommendationSection";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronsUpDown, FlaskConical, GripVertical } from "lucide-react";
 
 // Dynamically import PDF viewer wrapper to avoid SSR issues
 const PDFViewerWrapper = dynamic(
@@ -65,7 +76,8 @@ interface EncounterFormDraft {
   symptoms: string[];
   diagnoses: string[];
   medications: Medication[];
-  investigations: string;
+
+  investigations: { id: string; name: string; instructions: string }[];
   additionalNotes: string;
   followUp: string;
   recommendations: {
@@ -75,6 +87,7 @@ interface EncounterFormDraft {
   };
   alfaSummary?: string | null;
   alfaEncId?: string | null;
+  alfaHasBeenInvoked?: boolean;
   chatMessages?: { role: 'user' | 'ai'; text: string }[];
   isAiPanelExpanded?: boolean;
   savedAt: number; // timestamp
@@ -104,13 +117,14 @@ export default function EncounterPage() {
   const [healthHistory, setHealthHistory] = useState("");
   const [vitals, setVitals] = useState<Vitals>({});
   const [enabledVitals, setEnabledVitals] = useState<VitalDefinition[]>([]);
+  const [vitalDefinitions, setVitalDefinitions] = useState<VitalDefinition[]>([]);
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [symptomInput, setSymptomInput] = useState("");
   const [diagnoses, setDiagnoses] = useState<string[]>([]);
   const [diagnosisInput, setDiagnosisInput] = useState("");
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [investigations, setInvestigations] = useState("");
+  const [investigations, setInvestigations] = useState<{ id: string; name: string; instructions: string }[]>([]);
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [followUp, setFollowUp] = useState("");
   const [recommendations, setRecommendations] = useState({
@@ -118,6 +132,10 @@ export default function EncounterPage() {
     diet: { dos: [] as string[], donts: [] as string[] },
     exercises: { dos: [] as string[], donts: [] as string[] }
   });
+
+  // Lab Tests Form State
+  const [testInput, setTestInput] = useState("");
+  const [testInstructions, setTestInstructions] = useState("");
 
   // Medication form state
   const [showMedForm, setShowMedForm] = useState(false);
@@ -133,10 +151,16 @@ export default function EncounterPage() {
   const [alfaSummary, setAlfaSummary] = useState<string | null>(null);
   const [alfaRecommendations, setAlfaRecommendations] = useState<AlfaRecommendations | null>(null);
   const [alfaEncId, setAlfaEncId] = useState<string | null>(null);
+  const [alfaHasBeenInvoked, setAlfaHasBeenInvoked] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [isAiPanelExpanded, setIsAiPanelExpanded] = useState(false); // AI panels collapsed initially
+  // Collapsible Sections State
+  const [isHistoryCollapsed, setIsHistoryCollapsed] = useState(false);
+  const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
+  const [isAiChatCollapsed, setIsAiChatCollapsed] = useState(false);
+  const [isAiPanelExpanded, setIsAiPanelExpanded] = useState(false); // Controls panel visibility
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false); // Controls left panel collapse
 
   // Section ordering from doctor preferences
   const [sectionOrder, setSectionOrder] = useState<string[]>(['vitals', 'symptoms', 'diagnosis', 'medications', 'notes']);
@@ -158,7 +182,7 @@ export default function EncounterPage() {
         
         // Set doctor info and section order
         if (doctorResp?.data?.success) {
-          const doc = doctorResp.data.data?.doctor || doctorResp.data.data;
+          const doc: any = doctorResp.data.data?.doctor || doctorResp.data.data;
           setDoctorInfo({
             name: doc?.fullName || doc?.full_name || 'Doctor',
             qualification: doc?.qualification || doc?.qualifications,
@@ -176,11 +200,13 @@ export default function EncounterPage() {
           const config = vitalsConfigResp.data.data.vitalsConfig;
           const enabled = config.filter((v: any) => v.isEnabled === true);
           setEnabledVitals(enabled);
+          setVitalDefinitions(config);
         } else {
           // Fallback: fetch all vitals definitions
           try {
             const allVitals = await getVitalsDefinitions();
             setEnabledVitals(allVitals.data.data.vitals);
+            setVitalDefinitions(allVitals.data.data.vitals);
           } catch {
             console.warn('Could not fetch vitals definitions');
           }
@@ -191,7 +217,7 @@ export default function EncounterPage() {
           setError(api?.message || "Failed to load encounter");
           return;
         }
-        const b = api.data?.bundle;
+        const b: any = api.data?.bundle;
         if (!b) {
           setError("Encounter bundle missing");
           return;
@@ -200,20 +226,22 @@ export default function EncounterPage() {
         
         // Pre-fill form with existing data
         if (b.encounterForm) {
-          setChiefComplaint(b.encounterForm.chiefComplaint || "");
-          if (b.encounterForm.presentingSymptoms) {
-            setSymptoms(b.encounterForm.presentingSymptoms);
+          const form: any = b.encounterForm;
+          setChiefComplaint(form.chiefComplaint || "");
+          if (form.presentingSymptoms) {
+            setSymptoms(form.presentingSymptoms);
           }
         }
         if (b.vitals) {
           // Map API vitals to our dynamic vitals state
+          const vitalsData: any = b.vitals;
           const vitalsFromApi: Vitals = {};
-          if (b.vitals.bp || b.vitals.bloodPressure) vitalsFromApi.bp = b.vitals.bp || b.vitals.bloodPressure || "";
-          if (b.vitals.pulse || b.vitals.heartRate) vitalsFromApi.pulse = String(b.vitals.pulse || b.vitals.heartRate || "");
-          if (b.vitals.temp || b.vitals.temperature) vitalsFromApi.temp = String(b.vitals.temp || b.vitals.temperature || "");
-          if (b.vitals.weight) vitalsFromApi.weight = String(b.vitals.weight || "");
-          if (b.vitals.height) vitalsFromApi.height = String(b.vitals.height || "");
-          if (b.vitals.spo2 || b.vitals.spO2) vitalsFromApi.spo2 = String(b.vitals.spo2 || b.vitals.spO2 || "");
+          if (vitalsData.bp || vitalsData.bloodPressure) vitalsFromApi.bp = vitalsData.bp || vitalsData.bloodPressure || "";
+          if (vitalsData.pulse || vitalsData.heartRate) vitalsFromApi.pulse = String(vitalsData.pulse || vitalsData.heartRate || "");
+          if (vitalsData.temp || vitalsData.temperature) vitalsFromApi.temp = String(vitalsData.temp || vitalsData.temperature || "");
+          if (vitalsData.weight) vitalsFromApi.weight = String(vitalsData.weight || "");
+          if (vitalsData.height) vitalsFromApi.height = String(vitalsData.height || "");
+          if (vitalsData.spo2 || vitalsData.spO2) vitalsFromApi.spo2 = String(vitalsData.spo2 || vitalsData.spO2 || "");
           setVitals(vitalsFromApi);
         }
       } catch (err: any) {
@@ -251,12 +279,24 @@ export default function EncounterPage() {
           if (draft.symptoms?.length) setSymptoms(draft.symptoms);
           if (draft.diagnoses?.length) setDiagnoses(draft.diagnoses);
           if (draft.medications?.length) setMedications(draft.medications);
-          if (draft.investigations) setInvestigations(draft.investigations);
+          
+          // Handle investigations (legacy string vs new array)
+          if (draft.investigations) {
+            if (Array.isArray(draft.investigations)) {
+              setInvestigations(draft.investigations);
+            } else if (typeof draft.investigations === 'string') {
+              // Legacy support: append to notes or ignore
+              setAdditionalNotes(prev => prev + "\nLegacy Investigations: " + draft.investigations);
+              setInvestigations([]);
+            }
+          }
+          
           if (draft.additionalNotes) setAdditionalNotes(draft.additionalNotes);
           if (draft.followUp) setFollowUp(draft.followUp);
           if (draft.recommendations) setRecommendations(draft.recommendations);
           if (draft.alfaSummary) setAlfaSummary(draft.alfaSummary);
           if (draft.alfaEncId) setAlfaEncId(draft.alfaEncId);
+          if (draft.alfaHasBeenInvoked) setAlfaHasBeenInvoked(draft.alfaHasBeenInvoked);
           if (draft.chatMessages) setChatMessages(draft.chatMessages);
           if (draft.isAiPanelExpanded) setIsAiPanelExpanded(draft.isAiPanelExpanded);
         }
@@ -293,6 +333,7 @@ export default function EncounterPage() {
           recommendations,
           alfaSummary,
           alfaEncId,
+          alfaHasBeenInvoked,
           chatMessages,
           isAiPanelExpanded,
           savedAt: Date.now(),
@@ -308,7 +349,7 @@ export default function EncounterPage() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [id, loading, healthHistory, vitals, chiefComplaint, symptoms, diagnoses, medications, investigations, additionalNotes, followUp, recommendations, alfaSummary, alfaEncId, chatMessages, isAiPanelExpanded]);
+  }, [id, loading, healthHistory, vitals, chiefComplaint, symptoms, diagnoses, medications, investigations, additionalNotes, followUp, recommendations, alfaSummary, alfaEncId, alfaHasBeenInvoked, chatMessages, isAiPanelExpanded]);
 
   // Handlers
   const addSymptom = () => {
@@ -349,6 +390,32 @@ export default function EncounterPage() {
 
   const removeMedication = (id: string) => {
     setMedications(medications.filter((m) => m.id !== id));
+  };
+
+  // Lab Test Handlers
+  const addTest = () => {
+    if (testInput.trim()) {
+      setInvestigations([
+        ...investigations,
+        {
+          id: Date.now().toString(),
+          name: testInput.trim(),
+          instructions: testInstructions.trim(),
+        },
+      ]);
+      setTestInput("");
+      setTestInstructions("");
+    }
+  };
+
+  const removeTest = (id: string) => {
+    setInvestigations(investigations.filter((t) => t.id !== id));
+  };
+
+  const updateTest = (id: string, field: 'name' | 'instructions', value: string) => {
+    setInvestigations(investigations.map(t => 
+      t.id === id ? { ...t, [field]: value } : t
+    ));
   };
 
   const handleSubmit = async () => {
@@ -416,12 +483,8 @@ export default function EncounterPage() {
 
   // Alfa AI - Invoke Encounter Assessment
   const handleAlfaInvoke = async () => {
-    // If AI analysis already exists, just show the panel
-    if (alfaEncId || alfaSummary) {
-      setIsAiPanelExpanded(true);
-      toast.info("Showing existing AI analysis.");
-      return;
-    }
+    // Always expand the AI panel when invoking
+    setIsAiPanelExpanded(true);
 
     if (!chiefComplaint.trim()) {
       toast.error("Please enter a chief complaint first.");
@@ -477,9 +540,17 @@ export default function EncounterPage() {
           })));
         }
         
-        // Prefill Investigations/Tests
+        // Deprecated string format
+        // if (data.tests?.length) {
+        //   setInvestigations(data.tests.map(t => `${t.name}${t.reason ? ` - ${t.reason}` : ''}`).join('\n'));
+        // }
+        // New Array Format
         if (data.tests?.length) {
-          setInvestigations(data.tests.map(t => `${t.name}${t.reason ? ` - ${t.reason}` : ''}`).join('\n'));
+            setInvestigations(data.tests.map((t, i) => ({
+                id: `alfa-test-${i}-${Date.now()}`,
+                name: t.name,
+                instructions: t.reason || ''
+            })));
         }
         
         // Populate Recommendations State
@@ -493,6 +564,7 @@ export default function EncounterPage() {
 
         // Expand AI panels after successful invocation
         setIsAiPanelExpanded(true);
+        setAlfaHasBeenInvoked(true);
 
         toast.success("AI suggestions applied to form!");
       }
@@ -567,49 +639,48 @@ export default function EncounterPage() {
         return (
           <div key="vitals" className="bg-white rounded-xl p-4 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-3">Vitals</h3>
-            {enabledVitals.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {enabledVitals.map((vital) => {
-                  const IconComponent = iconMap[vital.icon || 'activity'] || Activity;
-                  return (
-                    <div key={vital.key} className="flex items-center gap-2">
-                      <IconComponent className={`w-4 h-4 ${vital.color || 'text-gray-400'}`} />
-                      <input
-                        type="text"
-                        value={vitals[vital.key] || ''}
-                        onChange={(e) => setVitals({ ...vitals, [vital.key]: e.target.value })}
-                        placeholder={vital.name}
-                        disabled={isFinalized}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <input type="text" value={vitals.bp || ''} onChange={(e) => setVitals({ ...vitals, bp: e.target.value })} placeholder="Blood Pressure" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.pulse || ''} onChange={(e) => setVitals({ ...vitals, pulse: e.target.value })} placeholder="Heart Rate" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.temp || ''} onChange={(e) => setVitals({ ...vitals, temp: e.target.value })} placeholder="Temperature" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                <input type="text" value={vitals.weight || ''} onChange={(e) => setVitals({ ...vitals, weight: e.target.value })} placeholder="Weight" disabled={isFinalized} className="px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-              </div>
-            )}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    {enabledVitals.map((vital) => {
+                      const IconComponent = iconMap[vital.icon || 'activity'] || Activity;
+                      return (
+                        <th key={vital.key} className="px-3 py-2 text-left first:rounded-tl-lg last:rounded-tr-lg">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                            <IconComponent className={`w-3.5 h-3.5 ${vital.color || 'text-blue-500'}`} />
+                            <span>{vital.name}</span>
+                            {vital.unit && <span className="text-gray-400 font-normal">({vital.unit})</span>}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t border-gray-100">
+                    {enabledVitals.map((vital) => (
+                      <td key={vital.key} className="px-2 py-2">
+                        <input
+                          type="text"
+                          value={vitals[vital.key] || ''}
+                          onChange={(e) => setVitals({ ...vitals, [vital.key]: e.target.value })}
+                          disabled={isFinalized}
+                          placeholder="—"
+                          className="w-full min-w-[80px] px-3 py-2 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 hover:border-blue-300 transition-colors"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         );
       case 'symptoms':
         return (
           <div key="symptoms" className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">Chief Complaint & Symptoms</h3>
-              <button
-                onClick={handleAlfaInvoke}
-                disabled={isAlfaLoading || !chiefComplaint.trim() || isFinalized}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAlfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Alfa Invoke
-              </button>
-            </div>
+            <h3 className="font-semibold text-gray-900 mb-3">Chief Complaint & Symptoms</h3>
             <textarea
               value={chiefComplaint}
               onChange={(e) => setChiefComplaint(e.target.value)}
@@ -617,6 +688,23 @@ export default function EncounterPage() {
               disabled={isFinalized}
               className="w-full h-20 p-3 border border-gray-200 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 mb-3"
             />
+            
+            {/* Alfa Invoke Button - Moved Below Chief Complaint */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleAlfaInvoke}
+                disabled={isAlfaLoading || !chiefComplaint.trim() || isFinalized}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                  alfaHasBeenInvoked 
+                    ? "bg-white border border-purple-200 text-purple-700 hover:bg-purple-50" 
+                    : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-md"
+                }`}
+              >
+                {isAlfaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {alfaHasBeenInvoked ? "Re-invoke Alfa AI" : "Invoke Alfa AI"}
+              </button>
+            </div>
+
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
@@ -656,12 +744,31 @@ export default function EncounterPage() {
               <button onClick={addDiagnosis} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium">Add</button>
             </div>
             {diagnoses.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
                 {diagnoses.map((d, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-700 rounded-full text-sm">
-                    {d}
-                    <button onClick={() => removeDiagnosis(i)} className="hover:text-red-900"><X className="w-3 h-3" /></button>
-                  </span>
+                  <div key={i} className="relative bg-gradient-to-r from-red-50 to-rose-50 border border-red-100 rounded-lg p-3">
+                    <div className="flex items-start gap-3">
+                      <div 
+                        contentEditable={!isFinalized}
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          const newDiagnoses = [...diagnoses];
+                          newDiagnoses[i] = e.currentTarget.textContent || '';
+                          setDiagnoses(newDiagnoses);
+                        }}
+                        className="flex-1 text-sm text-red-800 leading-relaxed outline-none whitespace-pre-wrap break-words"
+                      >
+                        {d}
+                      </div>
+                      <button 
+                        onClick={() => removeDiagnosis(i)} 
+                        disabled={isFinalized}
+                        className="flex-shrink-0 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -707,14 +814,90 @@ export default function EncounterPage() {
         return (
           <React.Fragment key="notes">
             <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-3">Investigations</h3>
-              <textarea
-                value={investigations}
-                onChange={(e) => setInvestigations(e.target.value)}
-                placeholder="List investigations to be done..."
-                className="w-full h-20 p-3 border border-gray-200 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="w-5 h-5 text-gray-700" />
+                  <h3 className="font-semibold text-gray-900">Lab Tests</h3>
+                </div>
+              </div>
+              
+              {/* Lab Tests Table */}
+              {investigations.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden mb-3">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-700 font-medium">
+                      <tr>
+                        <th className="px-4 py-2 w-1/3">Test Name</th>
+                        <th className="px-4 py-2">Instructions</th>
+                        <th className="px-4 py-2 w-12"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {investigations.map((test) => (
+                        <tr key={test.id} className="group hover:bg-gray-50">
+                          <td className="px-4 py-2">
+                            <input 
+                              value={test.name}
+                              onChange={(e) => updateTest(test.id, 'name', e.target.value)}
+                              className="w-full bg-transparent focus:outline-none focus:underline"
+                              placeholder="Test Name"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <input 
+                              value={test.instructions}
+                              onChange={(e) => updateTest(test.id, 'instructions', e.target.value)}
+                              className="w-full bg-transparent focus:outline-none focus:underline text-gray-600"
+                              placeholder="Instructions (optional)"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            <button 
+                              onClick={() => removeTest(test.id)}
+                              className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500 text-sm mb-3">
+                  No lab tests added yet.
+                </div>
+              )}
+
+              {/* Add Test Form */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={testInput}
+                  onChange={(e) => setTestInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addTest()}
+                  placeholder="Test Name"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+                <input
+                  type="text"
+                  value={testInstructions}
+                  onChange={(e) => setTestInstructions(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addTest()}
+                  placeholder="Instructions"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+                <button 
+                  onClick={addTest}
+                  disabled={!testInput.trim()}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  Add Test
+                </button>
+              </div>
             </div>
+
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <h3 className="font-semibold text-gray-900 mb-3">Additional Notes</h3>
               <textarea
@@ -800,195 +983,279 @@ export default function EncounterPage() {
       </header>
 
       {/* Main Content */}
-      {showPreview ? (
-        <div className="p-4 max-w-5xl mx-auto h-[calc(100vh-70px)] overflow-y-auto">
-          <EncounterPreview
-            patient={{
-              name: patient.fullName || patient.full_name || "Patient",
-              uhid: patient.uhid || "N/A",
-              age: patientAge,
-              gender: patient.gender
-            }}
-            vitals={vitals}
-            enabledVitals={enabledVitals}
-            clinicalNotes={{
-              chiefComplaint,
-              historyPresentIllness: healthHistory, // Using health history as HPI for now, or combine
-              diagnosis: diagnoses.join(", "),
-              treatmentPlan: additionalNotes // or followUp
-            }}
-            medications={medications}
-          />
-        </div>
-      ) : (
-      <div className="p-4 grid grid-cols-12 gap-4 max-h-[calc(100vh-70px)] overflow-y-auto">
+      <div className="flex h-[calc(100vh-70px)]">
         {/* Left Column - Health History */}
-        <div className="col-span-2">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-3">Health History Summary</h3>
-            <textarea
-              value={healthHistory}
-              onChange={(e) => setHealthHistory(e.target.value)}
-              placeholder="health history Summary..."
-              disabled={isFinalized}
-              className="w-full h-48 p-3 border border-gray-200 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-          </div>
-        </div>
-
-        {/* Middle Column - Form Sections */}
-        <div className={`${isAiPanelExpanded || isAlfaLoading ? 'col-span-6' : 'col-span-10'} space-y-4`}>
-          {/* Dynamic sections based on saved order */}
-          {sectionOrder.map((sectionId) => renderSection(sectionId))}
-
-
-          {/* Recommendations Sections */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 ml-1">Recommendations</h3>
-            <RecommendationSection
-              label="Lifestyle"
-              value={recommendations.lifestyle}
-              onChange={(val) => setRecommendations({ ...recommendations, lifestyle: val })}
-            />
-            <RecommendationSection
-              label="Diet"
-              value={recommendations.diet}
-              onChange={(val) => setRecommendations({ ...recommendations, diet: val })}
-            />
-            <RecommendationSection
-              label="Exercises"
-              value={recommendations.exercises}
-              onChange={(val) => setRecommendations({ ...recommendations, exercises: val })}
-            />
-          </div>
-
-          {/* Follow Up */}
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-3">Follow Up</h3>
-            <input
-              type="text"
-              value={followUp}
-              onChange={(e) => setFollowUp(e.target.value)}
-              placeholder="e.g., After 1 week, After 2 weeks"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Right Column - AI Summary & Chat (Only visible after Alfa Invoke) */}
-        {(isAiPanelExpanded || isAlfaLoading) && (
-          <div className="col-span-4 space-y-4">
-            {/* AI Summary - Expanded */}
-            <div className="bg-gradient-to-br from-[#e8f0fc] to-[#f0e8fc] rounded-xl p-4 shadow-sm min-h-[280px] transition-all duration-300">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-gray-900">AI Summary Of The Suggestions</h3>
+        <div className={`flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ${isLeftPanelCollapsed ? 'w-12' : 'w-64'}`}>
+          {/* Collapsed State */}
+          {isLeftPanelCollapsed ? (
+            <div className="flex flex-col items-center py-4 h-full">
+              <button
+                onClick={() => setIsLeftPanelCollapsed(false)}
+                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Expand History Panel"
+              >
+                <ChevronRight className="w-5 h-5 text-blue-600" />
+              </button>
+              <span className="text-xs text-blue-600 mt-2 font-medium" style={{ writingMode: 'vertical-rl' }}>
+                History
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                  History
+                </h2>
+                <button
+                  onClick={() => setIsLeftPanelCollapsed(true)}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Collapse"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                </button>
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <Collapsible open={!isHistoryCollapsed} onOpenChange={(open) => setIsHistoryCollapsed(!open)}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-gray-50 rounded-lg group">
+                    <span className="text-sm font-medium text-gray-600">Medical History</span>
+                    <ChevronsUpDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2 space-y-4">
+                      {bundle?.medicalHistory?.map((entry: any, i: number) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">{entry.date}</div>
+                          <div className="font-medium text-gray-800 text-sm mb-1">{entry.doctor}</div>
+                          <p className="text-sm text-gray-600">{entry.diagnosis}</p>
+                        </div>
+                      ))}
+                      {(!bundle?.medicalHistory || bundle.medicalHistory.length === 0) && (
+                        <div className="text-sm text-gray-400 italic p-2">No history available</div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Middle Column - Form or Preview */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc] transition-all duration-300">
+          {showPreview ? (
+            <div className="p-4">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Editor
+              </button>
+              <EncounterPreview
+                patient={{
+                  name: bundle?.patient?.name || "Unknown",
+                  age: bundle?.patient?.demographics?.age,
+                  gender: bundle?.patient?.demographics?.gender,
+                  uhid: bundle?.patient?.uhid || "",
+                }}
+                vitals={vitals}
+                vitalDefinitions={vitalDefinitions as any}
+                enabledVitals={enabledVitals as any}
+                clinicalNotes={{
+                  chiefComplaint,
+                  symptoms,
+                  diagnosis: diagnoses.join(", "),
+                  notes: additionalNotes,
+                  treatmentPlan: followUp,
+                }}
+                medications={medications}
+                labTests={investigations}
+                recommendations={recommendations}
+                doctorInfo={doctorInfo || undefined}
+              />
+            </div>
+          ) : (
+            <div className="p-4">
+              <div className="w-full px-4 space-y-4 pb-20">
+                {/* Dynamic sections based on saved order */}
+                {sectionOrder.map((sectionId) => renderSection(sectionId))}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <h3 className="font-semibold text-gray-900 mb-3">Follow Up</h3>
+                    <input
+                      type="date"
+                      value={followUp}
+                      onChange={(e) => setFollowUp(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <RecommendationSection
+                  recommendations={recommendations}
+                  setRecommendations={setRecommendations}
+                  alfaRecommendations={alfaRecommendations}
+                />
+
+                {/* Final Actions */}
+                <div className="flex gap-4 pt-4 border-t">
+                  <button
+                    onClick={() => setShowPreview(true)}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    Preview Prescription
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || isFinalized}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? "Finalizing..." : isFinalized ? "Encounter Finalized" : "Finalize & Print"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - AI Panel */}
+        {(isAiPanelExpanded || isAlfaLoading || alfaHasBeenInvoked) && (
+          <div className={`flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full transition-all duration-300 ${isAiPanelExpanded ? 'w-96' : 'w-12'}`}>
+            {/* Collapsed State */}
+            {!isAiPanelExpanded && !isAlfaLoading ? (
+              <div className="flex flex-col items-center py-4 h-full">
+                <button
+                  onClick={() => setIsAiPanelExpanded(true)}
+                  className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                  title="Expand AI Panel"
+                >
+                  <ChevronLeft className="w-5 h-5 text-purple-600" />
+                </button>
+                <span className="text-xs text-purple-600 mt-2 font-medium" style={{ writingMode: 'vertical-rl' }}>
+                  AI Assistant
+                </span>
+              </div>
+            ) : (
+              <>
+                {/* AI Summary Section */}
+                <div className="flex-shrink-0 max-h-[50%] flex flex-col bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 border-b-2 border-purple-200">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-purple-100/50 bg-white/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 text-sm">AI Summary</h3>
+                        <p className="text-[10px] text-purple-500 font-medium">Powered by Alfa</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsAiPanelExpanded(false)}
+                      className="p-1.5 hover:bg-purple-100 rounded-lg transition-colors"
+                      title="Collapse"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 min-h-0">
                 {isAlfaLoading ? (
-                  <div className="flex items-center gap-2 text-purple-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing patient data...</span>
+                  <div className="flex flex-col items-center justify-center py-8 gap-3">
+                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                    </div>
+                    <span className="text-purple-600 text-sm font-medium">Analyzing patient data...</span>
                   </div>
                 ) : alfaSummary ? (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-white/60 rounded-lg">
-                      <p className="font-medium text-gray-800 mb-1">Diagnosis</p>
-                      <p>{alfaSummary}</p>
-                    </div>
-                    {/* Recommendations Preview in AI Summary */}
-                    {/* Simplified view since we have full editors now */}
-                    {(
-                      recommendations.lifestyle.dos.length > 0 || 
-                      recommendations.diet.dos.length > 0 || 
-                      recommendations.exercises.dos.length > 0
-                    ) && (
-                       <div className="mt-2 text-xs text-gray-500 italic">
-                         Recommendations populated in the main form.
-                       </div>
-                    )}
-                  </div>
-                ) : bundle?.aiAnalysis ? (
-                  <div className="space-y-2">
-                    {bundle.aiAnalysis.summary && <p>{bundle.aiAnalysis.summary}</p>}
-                    {bundle.aiAnalysis.suggestions && (
-                      <ul className="list-disc pl-4 space-y-1">
-                        {bundle.aiAnalysis.suggestions.map((s: string, i: number) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    )}
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-purple-100">
+                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{alfaSummary}</p>
                   </div>
                 ) : (
-                  <p className="text-gray-400 italic">
-                    AI analysis complete. Results displayed above.
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
+                      <Sparkles className="w-8 h-8 text-purple-400" />
+                    </div>
+                    <p className="text-gray-500 text-sm font-medium">No AI summary yet</p>
+                    <p className="text-gray-400 text-xs mt-1">Click "Invoke Alfa AI" to get suggestions</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Chat Window - Expanded */}
-            <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col transition-all duration-300" style={{ minHeight: '300px' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Send className="w-4 h-4 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">Chat with Alfa AI</h3>
+            {/* Chat Section */}
+            <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-blue-100/50 bg-white/50 backdrop-blur-sm">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                  <Send className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">Chat with Alfa</h4>
+                  <p className="text-[10px] text-blue-500 font-medium">
+                    {alfaEncId ? 'Online' : 'Invoke AI first to chat'}
+                  </p>
+                </div>
               </div>
-              
-              {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-48">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
                 {chatMessages.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                    <span>Ask follow-up questions about the diagnosis...</span>
+                  <div className="h-full flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                      <MessageSquare className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <p className="text-gray-400 text-sm">Ask follow-up questions...</p>
                   </div>
                 ) : (
-                  chatMessages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`p-2 rounded-lg text-sm ${
+                  chatMessages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] ${
                         msg.role === 'user'
-                          ? 'bg-blue-100 text-blue-900 ml-4'
-                          : 'bg-gray-100 text-gray-800 mr-4'
-                      }`}
-                    >
-                      <span className="font-medium text-xs block mb-0.5">
-                        {msg.role === 'user' ? 'You' : 'Alfa AI'}
-                      </span>
-                      {msg.text}
+                          ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md shadow-sm'
+                          : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-sm border border-gray-100'
+                      } px-4 py-2.5`}>
+                        <p className="text-sm">{msg.text}</p>
+                      </div>
                     </div>
                   ))
                 )}
                 {isChatLoading && (
-                  <div className="flex items-center gap-2 text-gray-500 text-sm p-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Thinking...</span>
+                  <div className="flex justify-start">
+                    <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 shadow-sm border border-gray-100">
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Chat Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
-                  placeholder="Ask a follow-up question..."
-                  disabled={!alfaEncId || isChatLoading}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <button
-                  onClick={handleSendChat}
-                  disabled={!alfaEncId || isChatLoading || !chatInput.trim()}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+              <div className="p-3 bg-white/80 backdrop-blur-sm border-t border-blue-100">
+                <div className="flex gap-2 items-center bg-white rounded-xl border border-gray-200 shadow-sm px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 transition-all">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
+                    placeholder={alfaEncId ? "Type your question..." : "Invoke AI first..."}
+                    disabled={!alfaEncId || isChatLoading}
+                    className="flex-1 py-2 text-sm bg-transparent focus:outline-none placeholder:text-gray-400 disabled:text-gray-400"
+                  />
+                  <button
+                    onClick={handleSendChat}
+                    disabled={!alfaEncId || isChatLoading || !chatInput.trim()}
+                    className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
+              </>
+            )}
           </div>
         )}
       </div>
-      )}
 
       {/* Prescription Preview Modal (Removed) */}
 
